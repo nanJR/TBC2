@@ -1,4 +1,7 @@
+import Link from "next/link";
+
 import { BackendStatus } from "@/components/backend-status";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -16,6 +19,15 @@ export default function Home() {
         <h1 className="text-3xl font-semibold tracking-tight">TBC²</h1>
         <p className="text-muted-foreground mt-1">AI-powered TB care coordinator</p>
       </header>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link href="/screen" className={buttonVariants({ size: "lg" })}>
+          ASHA: screen a person
+        </Link>
+        <Link href="/dashboard" className={buttonVariants({ size: "lg", variant: "outline" })}>
+          District dashboard
+        </Link>
+      </div>
 
       <Card>
         <CardHeader>

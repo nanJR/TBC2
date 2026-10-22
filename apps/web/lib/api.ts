@@ -35,3 +35,53 @@ export async function screenMock(): Promise<ScreenResult> {
   if (!res.ok) throw new Error(`Screening failed: ${res.status}`);
   return res.json();
 }
+
+// ---- Patients, risk and actions: mirrors services/api/app/schemas.py ----
+
+export type Patient = {
+  patient_id: string;
+  age: number;
+  sex: "M" | "F";
+  district: string;
+  lat: number;
+  lon: number;
+  distance_to_clinic_km: number;
+  regimen: "drug-sensitive" | "drug-resistant";
+  days_on_treatment: number;
+  doses_missed_last_4_weeks: number;
+  alcohol_use: boolean;
+  undernourished: boolean;
+  previously_treated: boolean;
+  has_phone: boolean;
+  gets_nutrition_support: boolean;
+};
+
+export type RiskEntry = {
+  patient: Patient;
+  risk_score: number;
+  reasons: string[];
+  is_mock: boolean;
+};
+
+export type Action = {
+  action_id: number;
+  patient_id: string;
+  type: "sms" | "home_visit" | "nutrition_support";
+  draft: string;
+  status: "pending" | "approved" | "rejected";
+};
+
+// Small helper so every call handles errors the same way.
+async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, { cache: "no-store", ...init });
+  if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
+  return res.json();
+}
+
+export const getWeeklyRisk = (limit = 20) =>
+  getJson<RiskEntry[]>(`/risk/weekly?limit=${limit}`);
+
+export const getActions = () => getJson<Action[]>("/actions");
+
+export const decideAction = (id: number, decision: "approve" | "reject") =>
+  getJson<Action>(`/actions/${id}/${decision}`, { method: "POST" });
