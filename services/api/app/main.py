@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import screen
+from app.routers import actions, patients, screen
 
 app = FastAPI(
     title="TBC² API",
@@ -26,6 +26,8 @@ app.add_middleware(
 
 # Each router is one group of related endpoints, kept in its own file.
 app.include_router(screen.router)
+app.include_router(patients.router)
+app.include_router(actions.router)
 
 
 @app.get("/health", tags=["system"])
