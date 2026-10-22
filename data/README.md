@@ -13,3 +13,14 @@ machine; that folder is ignored by git.
 
 All patients in this project are either from these public research datasets
 or fully synthetic. Never add real patient records.
+
+## Synthetic patients
+
+```bash
+python data/synthetic/generate_patients.py --n 5000
+```
+
+This writes `data/processed/synthetic_patients.csv`, which git ignores. The
+rates in the script are placeholders until they are replaced with cited India
+TB Report figures. Dropout labels come from a rule we wrote ourselves, so any
+model accuracy on this data only shows that the pipeline works.
