@@ -1,0 +1,28 @@
+[project]
+name = "tbc2-api"
+version = "0.1.0"
+description = "TBC² back end: REST API, database and model serving"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.115",
+    "pydantic-settings>=2.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# E/F: real errors, I: sorted imports, UP: modern Python syntax, B: likely bugs
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Lets tests write "from app.main import app".
+pythonpath = ["."]
