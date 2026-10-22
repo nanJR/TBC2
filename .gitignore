@@ -1,0 +1,90 @@
+# ---------------------------------------------------------------
+# TBC² .gitignore
+# Golden rule: never commit secrets, datasets or model weights.
+# ---------------------------------------------------------------
+
+# --- Secrets -----------------------------------------------------
+# Real keys live in .env files on your own machine only.
+# Copy .env.example to .env and fill it in; .env.example IS committed.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# --- Datasets (large, and CODA TB's terms forbid sharing) ---------
+# Only download scripts, READMEs and the synthetic generator go in git.
+data/raw/
+data/processed/
+data/external/
+*.csv
+*.parquet
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.dcm
+*.nii
+*.nii.gz
+*.zip
+*.tar
+*.tar.gz
+# Chest X-ray images live in data/raw; app icons in apps/web/public are fine.
+data/**/*.png
+data/**/*.jpg
+data/**/*.jpeg
+ml/**/*.png
+ml/**/*.jpg
+ml/**/*.jpeg
+
+# --- Model weights (store them on Hugging Face Hub instead) -------
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+*.bin
+*.h5
+*.joblib
+*.pkl
+*.pickle
+models/
+checkpoints/
+
+# --- Experiment logs ---------------------------------------------
+wandb/
+mlruns/
+lightning_logs/
+runs/
+
+# --- Python ------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
+
+# --- Node / Next.js ----------------------------------------------
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+.pnpm-debug.log*
+
+# --- Editors and OS ----------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
