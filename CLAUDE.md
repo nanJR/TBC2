@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-TBC² is a TB care coordinator prototype (RVCE Experiential Learning, team "The MedMinds"). An ASHA phone app screens people for TB, and a district dashboard flags patients likely to drop out of treatment. It is a FastAPI back end (`services/api/`) plus a Next.js front end (`apps/web/`). `agent/` (LangGraph), `ml/cough`, `ml/cxr`, `ml/dropout`, `ml/export` and `sim/` (Mesa) are empty placeholders for now. **Prototype for learning only, not for clinical use.**
+TBC² is a TB care coordinator prototype (RVCE Experiential Learning, team "The MedMinds"). An ASHA phone app screens people for TB, and a district dashboard flags patients likely to drop out of treatment. It is a FastAPI back end (`services/api/`) plus a Next.js front end (`apps/web/`). `ml/` is a uv project for model training (`ml/cxr` is in progress); `agent/` (LangGraph), `ml/cough`, `ml/dropout`, `ml/export` and `sim/` (Mesa) are still empty placeholders. The dev laptop has no CUDA GPU and WSL gets ~4 GB RAM, so training code must run on CPU in modest memory. **Prototype for learning only, not for clinical use.**
 
 ## Commands
 
@@ -21,6 +21,10 @@ npm install
 npm run dev     # http://localhost:3000
 npm run lint    # eslint
 npm run build
+
+# ml/  (one uv project for all model training; CPU-only PyTorch by default)
+uv sync                                             # on a CUDA machine, first drop the pytorch-cpu [tool.uv.sources] lines
+uv run python cxr/find_duplicates.py                # rewrites cxr/exclude.txt; every CXR script must skip those files
 
 # repo root
 ./scripts/dev.sh                                    # both servers, logs tagged [api]/[web]
