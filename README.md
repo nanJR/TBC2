@@ -59,6 +59,23 @@ npm run dev
 
 The home page calls the back end's `/health` endpoint and shows whether it is up.
 
+**Or start both at once** (Linux, macOS or WSL), with logs tagged `[api]` and `[web]`:
+
+```bash
+./scripts/dev.sh
+```
+
+If another project already uses port 8000 or 3000, pick others:
+`API_PORT=8100 WEB_PORT=3100 ./scripts/dev.sh`
+
+### tmux workspace (WSL)
+
+`./scripts/tmux-dev.sh` opens a tmux session called `TBC2`: Claude Code on the
+left, the dev servers top-right, lazygit bottom-right. Run it again to reattach.
+It needs `tmux`, `lazygit`, `claude`, `uv` and Node.js installed inside WSL.
+Clone the repo inside WSL (for example `~/code/TBC2`), not under `/mnt/c`:
+packages installed by Windows don't run on Linux, and `/mnt/c` is slow.
+
 ## Team rules
 
 - **Never commit secrets, datasets or model weights.** `.gitignore` blocks the
