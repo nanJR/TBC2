@@ -13,7 +13,7 @@
 *.key
 secrets/
 
-# --- Datasets (large, and CODA TB's terms forbid sharing) ---------
+# --- Datasets (large; never re-upload) --------------------------
 # Only download scripts, READMEs and the synthetic generator go in git.
 data/raw/
 data/processed/
