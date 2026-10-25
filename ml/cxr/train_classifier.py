@@ -20,6 +20,7 @@ Output:
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import joblib
@@ -29,12 +30,14 @@ from sklearn.metrics import roc_auc_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+# Let this script import ml/evaluation.py, which lives one folder up.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from evaluation import TARGET_SENSITIVITY, pick_threshold, report
+
 ROOT = Path(__file__).resolve().parents[2]
 FEATURES_DIR = ROOT / "data" / "processed" / "cxr_features"
 CHECKPOINT_DIR = ROOT / "ml" / "checkpoints"
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
-TARGET_SENSITIVITY = 0.90
-TARGET_SPECIFICITY = 0.70
 
 
 def load(model_name: str, split: str) -> tuple[np.ndarray, np.ndarray]:
@@ -42,41 +45,12 @@ def load(model_name: str, split: str) -> tuple[np.ndarray, np.ndarray]:
     return data["features"], data["labels"]
 
 
-def sens_spec(labels: np.ndarray, scores: np.ndarray, threshold: float) -> tuple[float, float]:
-    """Sensitivity = share of TB caught. Specificity = share of Normal correctly cleared."""
-    flagged = scores >= threshold
-    sensitivity = flagged[labels == 1].mean()
-    specificity = (~flagged[labels == 0]).mean()
-    return float(sensitivity), float(specificity)
-
-
-def pick_threshold(labels: np.ndarray, scores: np.ndarray, min_sensitivity: float) -> float:
-    """Highest threshold that still flags at least `min_sensitivity` of the TB cases.
-
-    A higher threshold flags fewer people, so this is the setting with the best
-    specificity that still meets the sensitivity target.
-    """
-    tb_scores = np.sort(scores[labels == 1])
-    # Flagging everything >= the k-th lowest TB score catches (n - k) of n TB cases.
-    k = int(np.floor(len(tb_scores) * (1 - min_sensitivity)))
-    return float(tb_scores[k])
-
-
-def bootstrap_ci(labels, scores, threshold, n_rounds=1000, seed=0) -> dict[str, list[float]]:
-    """95% confidence intervals: re-score many random resamples of the test set."""
-    rng = np.random.default_rng(seed)
-    results = {"auroc": [], "sensitivity": [], "specificity": []}
-    for _ in range(n_rounds):
-        idx = rng.integers(0, len(labels), len(labels))
-        y, s = labels[idx], scores[idx]
-        results["auroc"].append(roc_auc_score(y, s))
-        sensitivity, specificity = sens_spec(y, s, threshold)
-        results["sensitivity"].append(sensitivity)
-        results["specificity"].append(specificity)
-    return {
-        k: [round(float(np.percentile(v, 2.5)), 4), round(float(np.percentile(v, 97.5)), 4)]
-        for k, v in results.items()
-    }
+def show(name: str, r: dict) -> None:
+    ci = r["ci95"]
+    print(f"  {name}: {r['n']} images ({r['n_tb']} TB)")
+    print(f"    AUROC       {r['auroc']:.3f}  95% CI {ci['auroc']}")
+    print(f"    sensitivity {r['sensitivity']:.3f}  95% CI {ci['sensitivity']}")
+    print(f"    specificity {r['specificity']:.3f}  95% CI {ci['specificity']}")
 
 
 def main() -> None:
@@ -103,25 +77,20 @@ def main() -> None:
         print(f"  C={c:<6} val AUROC {val_auroc:.4f}")
         if best is None or val_auroc > best[1]:
             best = (clf, val_auroc, c)
-    clf, val_auroc, best_c = best
+    clf, _, best_c = best
 
     val_scores = clf.predict_proba(x_val)[:, 1]
     threshold = pick_threshold(y_val, val_scores, TARGET_SENSITIVITY)
-    val_sens, val_spec = sens_spec(y_val, val_scores, threshold)
     print(f"Chosen C={best_c}, threshold {threshold:.4f} (set on val)")
-    print(f"  val: AUROC {val_auroc:.4f}, sensitivity {val_sens:.3f}, specificity {val_spec:.3f}")
+    val_report = report(y_val, val_scores, threshold)
+    show("val", val_report)
 
     # Test is looked at only here, after every choice above is fixed.
     x_test, y_test = load(args.model, "test")
-    test_scores = clf.predict_proba(x_test)[:, 1]
-    test_auroc = roc_auc_score(y_test, test_scores)
-    test_sens, test_spec = sens_spec(y_test, test_scores, threshold)
-    ci = bootstrap_ci(y_test, test_scores, threshold)
-    meets = test_sens >= TARGET_SENSITIVITY and test_spec >= TARGET_SPECIFICITY
-    print(f"  test: AUROC {test_auroc:.4f} {ci['auroc']}")
-    print(f"        sensitivity {test_sens:.3f} {ci['sensitivity']}")
-    print(f"        specificity {test_spec:.3f} {ci['specificity']}")
-    print(f"  WHO triage target (>=90% sens, >=70% spec): {'met' if meets else 'NOT met'}")
+    test_report = report(y_test, clf.predict_proba(x_test)[:, 1], threshold)
+    show("test", test_report)
+    met = "met" if test_report["meets_who_triage_target"] else "NOT met"
+    print(f"  WHO triage target (>=90% sens, >=70% spec) on test: {met}")
 
     CHECKPOINT_DIR.mkdir(exist_ok=True)
     joblib.dump(
@@ -133,21 +102,8 @@ def main() -> None:
         "feature_model": args.model,
         "classifier": f"logistic regression, C={best_c}, TB class weight {tb_weight:.2f}",
         "threshold": threshold,
-        "val": {
-            "n": len(y_val),
-            "auroc": val_auroc,
-            "sensitivity": val_sens,
-            "specificity": val_spec,
-        },
-        "test": {
-            "n": len(y_test),
-            "n_tb": int(y_test.sum()),
-            "auroc": test_auroc,
-            "sensitivity": test_sens,
-            "specificity": test_spec,
-            "ci95": ci,
-        },
-        "meets_who_triage_target": meets,
+        "val": val_report,
+        "test": test_report,
     }
     (RESULTS_DIR / f"{args.model}.json").write_text(json.dumps(results, indent=2) + "\n")
     print(f"Saved results -> {RESULTS_DIR / f'{args.model}.json'}")

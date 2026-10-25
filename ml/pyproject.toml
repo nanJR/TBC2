@@ -11,6 +11,7 @@ dependencies = [
     "numpy>=2.0",
     "pillow>=11.0",
     "tqdm>=4.66",
+    "librosa>=1.0.0",
 ]
 
 [dependency-groups]

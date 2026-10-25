@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-TBC² is a TB care coordinator prototype by the team "The MedMinds". An ASHA phone app screens people for TB, and a district dashboard flags patients likely to drop out of treatment. It is a FastAPI back end (`services/api/`) plus a Next.js front end (`apps/web/`). `ml/` is a uv project for model training (`ml/cxr` is in progress); `agent/` (LangGraph), `ml/cough`, `ml/dropout`, `ml/export` and `sim/` (Mesa) are still empty placeholders. The dev laptop has no CUDA GPU and WSL gets ~4 GB RAM, so training code must run on CPU in modest memory. **Prototype for learning only, not for clinical use.**
+TBC² is a TB care coordinator prototype by the team "The MedMinds". An ASHA phone app screens people for TB, and a district dashboard flags patients likely to drop out of treatment. It is a FastAPI back end (`services/api/`) plus a Next.js front end (`apps/web/`). `ml/` is a uv project for model training (`ml/cxr` and `ml/cough` are in progress, sharing metrics in `ml/evaluation.py`); `agent/` (LangGraph), `ml/dropout`, `ml/export` and `sim/` (Mesa) are still empty placeholders. The dev laptop has no CUDA GPU and WSL gets ~4 GB RAM, so training code must run on CPU in modest memory. **Prototype for learning only, not for clinical use.**
 
 ## Commands
 
@@ -25,6 +25,8 @@ npm run build
 # ml/  (one uv project for all model training; CPU-only PyTorch by default)
 uv sync                                             # on a CUDA machine, first drop the pytorch-cpu [tool.uv.sources] lines
 uv run python cxr/find_duplicates.py                # rewrites cxr/exclude.txt; every CXR script must skip those files
+uv run python cxr/extract_features.py               # ~1.5 h on CPU, resumable; then cxr/train_classifier.py
+uv run python cough/extract_features.py             # ~30 s; then cough/train_classifier.py
 
 # repo root
 ./scripts/dev.sh                                    # both servers, logs tagged [api]/[web]
@@ -46,6 +48,7 @@ No keys are needed: all data is in-memory mock data. `dev.sh` exports `FRONTEND_
 - Nothing is sent without a person's approval. Agent-drafted `Action`s start as `pending`, and only `POST /actions/{id}/approve|reject` changes them, once (a second decision returns 409). Keep this rule when the real agent and SMS sending arrive.
 - Update `apps/web/lib/api.ts` whenever `services/api/app/schemas.py` or `ScreenResult` in `app/routers/screen.py` changes. The TypeScript types mirror the Pydantic models by hand.
 - Pages call the back end only through the helpers in `apps/web/lib/api.ts`, never with a raw `fetch()`.
+- Cough results must include the TBscreen-only numbers. Coswara clips are all Healthy and recorded at home, so mixed-source scores are inflated (shortcut-check AUROC 0.99). Score per person, never per clip.
 - Every score response carries `is_mock`. Keep it `True` until a real model produces the number.
 - Treat the rates in `generate_patients.py` as placeholders (`TODO: cite`) until they are replaced with India TB Report figures. Dropout labels come from our own rule, so model accuracy on synthetic data only shows the pipeline works. Never report it as real-world performance.
 - Next.js here is 16.4 with React 19.3 (`cacheComponents` and `partialPrefetching` on). Read `apps/web/node_modules/next/dist/docs/` before writing Next.js code. Don't rely on memory.

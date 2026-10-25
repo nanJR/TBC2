@@ -5,7 +5,7 @@ CPUs. Instead we run each image through an ImageNet-pretrained network ONCE,
 keep its second-to-last layer (1,280 numbers per image for efficientnet_b0),
 and later train a small, fast classifier on those numbers.
 
-Run from the ml/ folder (takes a while on CPU; progress bar shows how long):
+Run from the ml/ folder (about an hour on CPU; safe to stop and rerun, it resumes):
     uv run python cxr/extract_features.py
     uv run python cxr/extract_features.py --model efficientnet_b0 --batch-size 32
 
@@ -31,6 +31,7 @@ EXCLUDE_FILE = Path(__file__).resolve().parent / "exclude.txt"
 OUT_DIR = ROOT / "data" / "processed" / "cxr_features"
 SPLITS = ["train", "val", "test"]
 LABELS = {"Normal": 0, "tb": 1}
+PART_SIZE = 1024  # images per saved part (see main)
 
 
 def list_images(split: str) -> list[tuple[Path, int]]:
@@ -84,20 +85,36 @@ def main() -> None:
             continue
 
         items = list_images(split)
-        loader = DataLoader(
-            XrayDataset(items, transform), batch_size=args.batch_size, num_workers=args.workers
-        )
-        chunks = []
-        with torch.inference_mode():  # no training here, so skip gradient bookkeeping
-            for images, _ in tqdm(loader, desc=split, unit="batch"):
-                chunks.append(model(images).numpy())
 
+        # Work in parts of PART_SIZE images and save each part as soon as it's done.
+        # If the run stops (laptop sleeps, terminal closes), rerunning the script
+        # skips the parts already on disk instead of starting the hour over.
+        part_dir = out_dir / f"{split}_parts"
+        part_dir.mkdir(exist_ok=True)
+        starts = range(0, len(items), PART_SIZE)
+        for start in tqdm(starts, desc=split, unit="part"):
+            part_file = part_dir / f"{start:06d}.npy"
+            if part_file.exists():
+                continue
+            loader = DataLoader(
+                XrayDataset(items[start : start + PART_SIZE], transform),
+                batch_size=args.batch_size,
+                num_workers=args.workers,
+            )
+            with torch.inference_mode():  # no training here, so skip gradient bookkeeping
+                features = np.concatenate([model(images).numpy() for images, _ in loader])
+            np.save(part_file, features.astype(np.float32))
+
+        # All parts done: join them into one file per split, then remove the parts.
         np.savez(
             out_file,
-            features=np.concatenate(chunks).astype(np.float32),
+            features=np.concatenate([np.load(part_dir / f"{s:06d}.npy") for s in starts]),
             labels=np.array([label for _, label in items], dtype=np.int8),
             paths=np.array([p.relative_to(DATA_DIR).as_posix() for p, _ in items]),
         )
+        for part_file in part_dir.glob("*.npy"):
+            part_file.unlink()
+        part_dir.rmdir()
         print(f"Saved {len(items)} images -> {out_file}")
 
 

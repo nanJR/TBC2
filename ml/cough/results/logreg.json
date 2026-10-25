@@ -1,0 +1,59 @@
+{
+  "features": "1 s clip at 16 kHz -> 64 log-mel + 20 MFCC, mean and std over time",
+  "classifier": "logistic regression, C=0.01, person- and class-balanced weights",
+  "threshold": 0.4102044701576233,
+  "test_all_people": {
+    "n": 31,
+    "n_tb": 14,
+    "auroc": 0.8866,
+    "sensitivity": 1.0,
+    "specificity": 0.7647,
+    "ci95": {
+      "auroc": [
+        0.7352,
+        0.9899
+      ],
+      "sensitivity": [
+        1.0,
+        1.0
+      ],
+      "specificity": [
+        0.5455,
+        0.9474
+      ]
+    },
+    "meets_who_triage_target": true
+  },
+  "test_tbscreen_only": {
+    "n": 18,
+    "n_tb": 14,
+    "auroc": 0.5714,
+    "sensitivity": 1.0,
+    "specificity": 0.25,
+    "ci95": {
+      "auroc": [
+        0.1784,
+        0.9325
+      ],
+      "sensitivity": [
+        1.0,
+        1.0
+      ],
+      "specificity": [
+        0.0,
+        0.8
+      ]
+    },
+    "meets_who_triage_target": false
+  },
+  "shortcut_check_auroc_coswara_vs_tbscreen_healthy": 0.9906,
+  "tbscreen_only_5fold_cv": {
+    "n": 122,
+    "n_tb": 87,
+    "auroc": 0.6716,
+    "auroc_ci95": [
+      0.5635,
+      0.7732
+    ]
+  }
+}
