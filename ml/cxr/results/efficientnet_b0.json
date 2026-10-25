@@ -1,0 +1,49 @@
+{
+  "feature_model": "efficientnet_b0",
+  "classifier": "logistic regression, C=0.01, TB class weight 1.42",
+  "threshold": 0.7535532712936401,
+  "val": {
+    "n": 5299,
+    "n_tb": 2160,
+    "auroc": 0.9874,
+    "sensitivity": 0.9005,
+    "specificity": 0.9869,
+    "ci95": {
+      "auroc": [
+        0.9846,
+        0.9901
+      ],
+      "sensitivity": [
+        0.8879,
+        0.913
+      ],
+      "specificity": [
+        0.9825,
+        0.9906
+      ]
+    },
+    "meets_who_triage_target": true
+  },
+  "test": {
+    "n": 2659,
+    "n_tb": 1083,
+    "auroc": 0.989,
+    "sensitivity": 0.904,
+    "specificity": 0.9854,
+    "ci95": {
+      "auroc": [
+        0.9854,
+        0.9922
+      ],
+      "sensitivity": [
+        0.8862,
+        0.9206
+      ],
+      "specificity": [
+        0.9795,
+        0.9906
+      ]
+    },
+    "meets_who_triage_target": true
+  }
+}
