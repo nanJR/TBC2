@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-TBC² is a TB care coordinator prototype (RVCE Experiential Learning, team "The MedMinds"). An ASHA phone app screens people for TB, and a district dashboard flags patients likely to drop out of treatment. It is a FastAPI back end (`services/api/`) plus a Next.js front end (`apps/web/`). `ml/` is a uv project for model training (`ml/cxr` is in progress); `agent/` (LangGraph), `ml/cough`, `ml/dropout`, `ml/export` and `sim/` (Mesa) are still empty placeholders. The dev laptop has no CUDA GPU and WSL gets ~4 GB RAM, so training code must run on CPU in modest memory. **Prototype for learning only, not for clinical use.**
+TBC² is a TB care coordinator prototype by the team "The MedMinds". An ASHA phone app screens people for TB, and a district dashboard flags patients likely to drop out of treatment. It is a FastAPI back end (`services/api/`) plus a Next.js front end (`apps/web/`). `ml/` is a uv project for model training (`ml/cxr` is in progress); `agent/` (LangGraph), `ml/cough`, `ml/dropout`, `ml/export` and `sim/` (Mesa) are still empty placeholders. The dev laptop has no CUDA GPU and WSL gets ~4 GB RAM, so training code must run on CPU in modest memory. **Prototype for learning only, not for clinical use.**
 
 ## Commands
 

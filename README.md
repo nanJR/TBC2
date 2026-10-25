@@ -8,7 +8,7 @@ can follow up in time.
 > It uses public datasets and synthetic (fake) patients only. No real patient
 > data, and no connection to Ni-kshay or any ASHA system.
 
-RVCE Experiential Learning project by **The MedMinds**.
+A project by **The MedMinds**.
 
 ## How it works
 
