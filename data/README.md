@@ -32,6 +32,19 @@ Both datasets come already split. Use these splits as they are.
 | `Cough_Audio/audio_wav/<split>/{Healthy,TB}/*.wav` | 839 clips / 137 people | 229 / 30 | 199 / 31 |
 | `CXR/<split>/{Normal,tb}/*.jpg` | 47,035 | 5,533 | 2,768 |
 
+**JU-TB has exact duplicate images**, some across splits (103 test and 229
+val images also sit in train). `ml/cxr/find_duplicates.py` writes
+`ml/cxr/exclude.txt` (1,361 files), and training and evaluation skip
+everything in it. Nothing in `data/raw` is deleted. Cleaned X-ray sizes:
+
+| Split | TB | Normal | Total |
+| --- | --- | --- | --- |
+| train | 19,003 | 27,014 | 46,017 |
+| val | 2,160 | 3,139 | 5,299 |
+| test | 1,083 | 1,576 | 2,659 |
+
+Near-duplicates (same X-ray, resized or re-saved) are not checked yet.
+
 `Cough_Audio/cwt_scalograms/` has the same splits as images. In `train` only,
 each clip appears twice, as `_clean` and `_noisy` (added noise for training).
 
