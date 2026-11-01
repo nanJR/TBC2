@@ -27,6 +27,7 @@ uv sync                                             # on a CUDA machine, first d
 uv run python cxr/find_duplicates.py                # rewrites cxr/exclude.txt; every CXR script must skip those files
 uv run python cxr/extract_features.py               # ~1.5 h on CPU, resumable; then cxr/train_classifier.py
 uv run python cough/extract_features.py             # ~30 s; then cough/train_classifier.py
+uv run python export/export_cxr.py                  # writes services/api/models/xray; also export_cough.py
 
 # repo root
 ./scripts/dev.sh                                    # both servers, logs tagged [api]/[web]
@@ -50,6 +51,9 @@ No keys are needed: all data is in-memory mock data. `dev.sh` exports `FRONTEND_
 - Pages call the back end only through the helpers in `apps/web/lib/api.ts`, never with a raw `fetch()`.
 - Cough results must include the TBscreen-only numbers. Coswara clips are all Healthy and recorded at home, so mixed-source scores are inflated (shortcut-check AUROC 0.99). Score per person, never per clip.
 - Every score response carries `is_mock`. Keep it `True` until a real model produces the number.
+- A model can add a TB referral but never cancel one. Symptoms always go to NAAT (`app/inference/referral.py`), following the TB Mukt Bharat Abhiyaan and WHO. A model only affects referral if its `model.json` has `counts_towards_referral: true`.
+- `/screen` holds uploads in memory and never stores them. Prepare images and sound only through `app/inference/image.py` and `audio.py`; training imports the same code, and the export scripts check that scores match.
+- JU-TB leaks its labels: every tinted test image is TB, and image size tracks the label. Quote X-ray results within these groups too (grey images alone: 88.4% sensitivity).
 - Treat the rates in `generate_patients.py` as placeholders (`TODO: cite`) until they are replaced with India TB Report figures. Dropout labels come from our own rule, so model accuracy on synthetic data only shows the pipeline works. Never report it as real-world performance.
 - Next.js here is 16.4 with React 19.3 (`cacheComponents` and `partialPrefetching` on). Read `apps/web/node_modules/next/dist/docs/` before writing Next.js code. Don't rely on memory.
 - Write comments in the existing style: plain language aimed at beginner teammates, explaining what the code does and why.
@@ -57,7 +61,7 @@ No keys are needed: all data is in-memory mock data. `dev.sh` exports `FRONTEND_
 ## Architecture
 
 `services/api/app/main.py` adds CORS for `settings.frontend_origin` and registers one router per file in `app/routers/`:
-- `screen.py` → `POST /screen/mock` returns a fixed cough/X-ray score and their average. The real models will go in `app/inference/`.
+- `screen.py` → `POST /screen` takes age, symptoms, vulnerable groups, a WAV cough and an X-ray, and returns the next step, scores and a heatmap. Models load from `MODEL_DIR/{xray,cough}/` as `model.onnx` plus `model.json` (`app/inference/registry.py`), made by `ml/export/export_cxr.py` and `export_cough.py`. Git ignores them, and a missing model just leaves its score empty.
 - `patients.py` → `/patients`, `/patients/{id}` and `/risk/weekly?limit=` (sorted highest risk first).
 - `actions.py` → `/actions?status=` and approve/reject.
 

@@ -4,14 +4,12 @@
 
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { checkHealth, screenMock, type ScreenResult } from "@/lib/api";
+import { checkHealth } from "@/lib/api";
 
 type Status = "checking" | "up" | "down";
 
 export function BackendStatus() {
   const [status, setStatus] = useState<Status>("checking");
-  const [result, setResult] = useState<ScreenResult | null>(null);
 
   // Runs once when the component first appears on screen.
   useEffect(() => {
@@ -30,21 +28,6 @@ export function BackendStatus() {
           </span>
         )}
       </p>
-
-      <Button
-        disabled={status !== "up"}
-        onClick={() => screenMock().then(setResult)}
-        className="self-start"
-      >
-        Try a mock screening
-      </Button>
-
-      {result && (
-        <p className="text-sm">
-          TB risk score: <strong>{Math.round(result.risk_score * 100)}%</strong>
-          {result.is_mock && " (fake number, models not trained yet)"}
-        </p>
-      )}
     </div>
   );
 }

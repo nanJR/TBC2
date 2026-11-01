@@ -7,13 +7,58 @@
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-// Mirrors ScreenResult in services/api/app/routers/screen.py.
+// Mirrors services/api/app/routers/screen.py and app/inference/referral.py.
 // If you change one, change the other.
+export type Symptom =
+  | "cough_over_2_weeks"
+  | "cough_under_2_weeks"
+  | "fever"
+  | "night_sweats"
+  | "coughing_blood"
+  | "chest_pain"
+  | "shortness_of_breath"
+  | "weight_loss"
+  | "loss_of_appetite"
+  | "fatigue"
+  | "lymph_node_swelling";
+
+export type Vulnerability =
+  | "over_60"
+  | "underweight"
+  | "diabetes"
+  | "hiv"
+  | "smoker"
+  | "alcohol_use"
+  | "past_tb"
+  | "household_contact";
+
+export type ModelScore = {
+  score: number;
+  flagged: boolean;
+  counts_towards_referral: boolean;
+  status: string;
+  note: string;
+  version: string;
+};
+
 export type ScreenResult = {
-  cough_score: number;
-  xray_score: number | null;
-  risk_score: number;
+  next_step: "naat" | "offer_xray" | "routine_care";
+  reasons: string[];
+  cough: ModelScore | null;
+  xray: ModelScore | null;
+  xray_heatmap_png: string | null;
+  risk_score: number | null;
+  notes: string[];
   is_mock: boolean;
+};
+
+export type ScreenRequest = {
+  age: number;
+  symptoms: Symptom[];
+  vulnerabilities: Vulnerability[];
+  imageSource: "digital" | "phone_photo";
+  cough: Blob | null; // a WAV file
+  xray: File | null;
 };
 
 /** Returns true if the back end answers /health with status "ok". */
@@ -29,10 +74,21 @@ export async function checkHealth(): Promise<boolean> {
   }
 }
 
-/** Gets a fake screening result. Will be replaced by real cough/X-ray upload. */
-export async function screenMock(): Promise<ScreenResult> {
-  const res = await fetch(`${API_URL}/screen/mock`, { method: "POST" });
-  if (!res.ok) throw new Error(`Screening failed: ${res.status}`);
+/** Sends one person's answers and recordings. The server keeps none of the files. */
+export async function screen(request: ScreenRequest): Promise<ScreenResult> {
+  const form = new FormData();
+  form.append("age", String(request.age));
+  form.append("image_source", request.imageSource);
+  request.symptoms.forEach((s) => form.append("symptoms", s));
+  request.vulnerabilities.forEach((v) => form.append("vulnerabilities", v));
+  if (request.cough) form.append("cough", request.cough, "cough.wav");
+  if (request.xray) form.append("xray", request.xray);
+
+  const res = await fetch(`${API_URL}/screen`, { method: "POST", body: form });
+  if (!res.ok) {
+    const body: { detail?: unknown } = await res.json().catch(() => ({}));
+    throw new Error(typeof body.detail === "string" ? body.detail : "Screening failed.");
+  }
   return res.json();
 }
 
