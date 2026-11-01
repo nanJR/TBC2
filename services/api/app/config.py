@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     # unless we list them here (this is called CORS).
     frontend_origin: str = "http://localhost:3000"
 
+    # Where the exported models live. See app/inference/registry.py.
+    model_dir: str = "models"
+
     # Filled in later, when we connect Supabase.
     database_url: str | None = None
 

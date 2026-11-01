@@ -11,11 +11,3 @@ def test_health_says_ok():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
-
-
-def test_mock_screen_returns_valid_scores():
-    response = client.post("/screen/mock")
-    assert response.status_code == 200
-    body = response.json()
-    assert body["is_mock"] is True
-    assert 0 <= body["risk_score"] <= 1

@@ -12,6 +12,9 @@ dependencies = [
     "pillow>=11.0",
     "tqdm>=4.66",
     "librosa>=1.0.0",
+    "joblib>=1.4",
+    "onnx>=1.17",
+    "onnxruntime>=1.20",
 ]
 
 [dependency-groups]

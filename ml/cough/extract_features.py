@@ -7,32 +7,26 @@ Output: data/processed/cough_features.npz (git ignores it), one row per clip wit
 `features`, `labels` (1 = TB, 0 = Healthy), `person` (who coughed), `source`
 (TBscreen or Coswara), `split` and `paths`.
 
-IMPORTANT, why the clips are cleaned up first:
-The TB clips and the clinic non-TB clips (TBscreen, files PID_*) are each
-exactly 1 second long at 44.1 kHz. The Coswara clips (COSWARA_*), all labelled
-Healthy, are 0-15 second home recordings, mostly at 48 kHz. A model could learn
-"long clip = healthy" without ever hearing TB. So every clip is:
-  1. resampled to the same rate (16 kHz),
-  2. cut to the loudest 1-second window (Coswara) or padded to 1 second,
-  3. scaled to the same peak loudness.
-That removes the obvious give-aways, but NOT the microphone/room differences,
-which is why train_classifier.py also reports results on TBscreen clips alone.
+The clip clean-up lives in services/api/app/inference/audio.py, so that training and
+the server prepare sound in exactly the same way. It removes the obvious give-aways
+between clinic and home recordings, but NOT the microphone/room differences, which is
+why train_classifier.py also reports results on TBscreen clips alone.
 """
 
 import re
+import sys
 from pathlib import Path
 
-import librosa
 import numpy as np
 from tqdm import tqdm
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "services" / "api"))
+from app.inference.audio import describe, load_one_second
+
 DATA_DIR = ROOT / "data" / "raw" / "Cough_Audio" / "audio_wav"
 OUT_FILE = ROOT / "data" / "processed" / "cough_features.npz"
-SAMPLE_RATE = 16_000  # Hz; plenty for coughs, and the lowest rate in the data
-CLIP_SECONDS = 1.0
 LABELS = {"Healthy": 0, "TB": 1}
-MIN_SOUND_SECONDS = 0.3  # skip recordings shorter than this (some are empty)
 
 
 def person_id(file_name: str) -> str:
@@ -45,39 +39,6 @@ def person_id(file_name: str) -> str:
     if match is None:
         raise ValueError(f"Can't tell whose clip this is: {file_name}")
     return match.group(0)
-
-
-def load_one_second(path: Path) -> np.ndarray | None:
-    """Load a clip as exactly 1 second at 16 kHz, peak-normalised. None if too short."""
-    audio, _ = librosa.load(path, sr=SAMPLE_RATE, mono=True)
-    if len(audio) < MIN_SOUND_SECONDS * SAMPLE_RATE:
-        return None
-    n = int(CLIP_SECONDS * SAMPLE_RATE)
-    if len(audio) > n:
-        # Slide a 1-second window along the clip and keep the loudest part,
-        # which is where the cough is. A running total makes each window's energy
-        # one subtraction: energy[i] = total up to (i + n) - total up to i.
-        running = np.concatenate([[0.0], np.cumsum(audio.astype(np.float64) ** 2)])
-        energy = running[n:] - running[:-n]
-        start = int(np.argmax(energy))
-        audio = audio[start : start + n]
-    else:
-        audio = np.pad(audio, (0, n - len(audio)))
-    peak = np.abs(audio).max()
-    return audio / peak if peak > 0 else None
-
-
-def describe(audio: np.ndarray) -> np.ndarray:
-    """Summarise one second of sound as 168 numbers.
-
-    - 64 mel bands: how much energy there is at each pitch range (like a spectrogram),
-      summarised over time by their mean and standard deviation (128 numbers).
-    - 20 MFCCs: a compact description of the sound's "shape" (timbre),
-      again mean and standard deviation (40 numbers).
-    """
-    mel = librosa.power_to_db(librosa.feature.melspectrogram(y=audio, sr=SAMPLE_RATE, n_mels=64))
-    mfcc = librosa.feature.mfcc(S=mel, n_mfcc=20)
-    return np.concatenate([mel.mean(1), mel.std(1), mfcc.mean(1), mfcc.std(1)])
 
 
 def main() -> None:
