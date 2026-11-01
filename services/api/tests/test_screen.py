@@ -1,12 +1,18 @@
 """The rule that matters most: a model can add a referral but can never cancel one."""
 
 import io
+import json
 import tempfile
+from pathlib import Path
 
+import numpy as np
 from fastapi.testclient import TestClient
 from PIL import Image
 
+from app.config import settings
+from app.inference.audio import log_mel
 from app.inference.referral import decide, is_presumptive, rescale
+from app.inference.registry import get_model
 from app.main import app
 
 client = TestClient(app)
@@ -102,6 +108,19 @@ def test_oversized_upload_is_refused(tiny_models):
 def test_missing_models_leave_scores_empty(no_models, cough_wav):
     body = post(files={"cough": ("c.wav", cough_wav, "audio/wav")}).json()
     assert body["cough"] is None
+
+
+def test_cough_model_needing_clinical_answers_is_left_out(tiny_models, cough_wav):
+    folder = Path(settings.model_dir) / "cough"
+    meta = json.loads((folder / "model.json").read_text())
+    (folder / "model.json").write_text(json.dumps({**meta, "input_kind": "log_mel_clinical"}))
+    get_model.cache_clear()
+    body = post(files={"cough": ("c.wav", cough_wav, "audio/wav")}).json()
+    assert body["cough"] is None
+
+
+def test_log_mel_is_the_shape_the_cough_network_expects():
+    assert log_mel(np.random.default_rng(0).uniform(-1, 1, 16000)).shape == (64, 32)
 
 
 def test_uploads_are_never_written_to_disk(tiny_models, monkeypatch):

@@ -18,6 +18,7 @@ Windows Explorer the folder is `\\wsl.localhost\Ubuntu-24.04\home\panni\code\TBC
 | --- | --- | --- | --- |
 | [Tuberculosis Cough Acoustics Curated Dataset](https://www.kaggle.com/datasets/elffff/tuberculosis-cough-acoustics-curated-dataset) → `Cough_Audio/` | Cough model | Kaggle | 1,267 WAV clips from 198 people, plus CWT scalogram PNGs and `metadata_kaggle.csv`. TB coughs (GeneXpert/culture confirmed) and clinic non-TB coughs come from TBscreen (`PID_*` files); extra healthy coughs come from Coswara (`COSWARA_*`). CC BY 4.0 |
 | [JU-TBv1](https://data.mendeley.com/datasets/g46k8s49hj/3) → `CXR/` | X-ray model | Mendeley Data, DOI 10.17632/g46k8s49hj.3 | 55,336 JPG chest X-rays, TB vs Normal (about 42% TB). Jadavpur University. CC BY 4.0, cite Ghosh and Singh |
+| CODA TB (access requested, not here yet) → `CODA_TB/` | Cough model | CODA TB DREAM Challenge, registration required | 1,105 patients with clinical data; solicited coughs from 1,082 patients (9,772 files, 0.43 GB); longitudinal coughs from 565 patients (714,922 files, 31.6 GB, training only). Check the data terms before use. See `docs/cough-training-runbook.md` |
 | Synthetic patients | Dropout model, dashboard | `data/synthetic/` generator | Built from India TB Report statistics |
 
 All patients in this project are either from these public research datasets

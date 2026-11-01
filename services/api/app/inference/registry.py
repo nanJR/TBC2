@@ -33,6 +33,8 @@ class LoadedModel:
     status: str  # e.g. "experimental"
     note: str  # shown to the user with the score
     session: ort.InferenceSession
+    # How a cough model wants its sound: features168, log_mel or log_mel_clinical.
+    input_kind: str = "features168"
 
     def run(self, inputs: np.ndarray) -> list[np.ndarray]:
         name = self.session.get_inputs()[0].name
@@ -52,5 +54,6 @@ def get_model(task: Task) -> LoadedModel | None:
         counts_towards_referral=bool(meta["counts_towards_referral"]),
         status=meta["status"],
         note=meta["note"],
+        input_kind=meta.get("input_kind", "features168"),
         session=ort.InferenceSession(folder / "model.onnx", providers=["CPUExecutionProvider"]),
     )

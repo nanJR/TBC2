@@ -13,11 +13,11 @@ between clinic and home recordings, but NOT the microphone/room differences, whi
 why train_classifier.py also reports results on TBscreen clips alone.
 """
 
-import re
 import sys
 from pathlib import Path
 
 import numpy as np
+from manifest import person_id
 from tqdm import tqdm
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,18 +27,6 @@ from app.inference.audio import describe, load_one_second
 DATA_DIR = ROOT / "data" / "raw" / "Cough_Audio" / "audio_wav"
 OUT_FILE = ROOT / "data" / "processed" / "cough_features.npz"
 LABELS = {"Healthy": 0, "TB": 1}
-
-
-def person_id(file_name: str) -> str:
-    """Which person a clip belongs to.
-
-    TBscreen: PID_10A114_yeti.wav -> PID_10A (person 10, cohort A, clip 114).
-    Coswara:  COSWARA_<id>_cough-heavy.wav -> COSWARA_<id>.
-    """
-    match = re.match(r"(PID_\d+[A-Z])|(COSWARA_[^_]+)", file_name)
-    if match is None:
-        raise ValueError(f"Can't tell whose clip this is: {file_name}")
-    return match.group(0)
 
 
 def main() -> None:

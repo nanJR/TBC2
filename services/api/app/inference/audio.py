@@ -42,6 +42,15 @@ def load_one_second(source: Path | BinaryIO) -> np.ndarray | None:
     return audio / peak if peak > 0 else None
 
 
+def log_mel(audio: np.ndarray) -> np.ndarray:
+    """One second of sound as a 64 x 32 picture (pitch by time) for the cough network.
+
+    Scaled per clip so that recording volume doesn't affect the model.
+    """
+    mel = librosa.power_to_db(librosa.feature.melspectrogram(y=audio, sr=SAMPLE_RATE, n_mels=64))
+    return ((mel - mel.mean()) / (mel.std() + 1e-6)).astype(np.float32)
+
+
 def describe(audio: np.ndarray) -> np.ndarray:
     """Summarise one second of sound as 168 numbers.
 

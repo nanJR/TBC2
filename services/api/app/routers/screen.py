@@ -14,7 +14,7 @@ from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 from starlette.formparsers import MultiPartParser
 
-from app.inference.audio import describe, load_one_second
+from app.inference.audio import describe, load_one_second, log_mel
 from app.inference.image import MAX_COLOUR_DIFFERENCE, colour_difference, heatmap_png, preprocess
 from app.inference.referral import NextStep, Symptom, Vulnerability, decide, rescale
 from app.inference.registry import get_model
@@ -83,8 +83,14 @@ def _score_cough(upload: UploadFile) -> ModelScore | None:
         raise HTTPException(status_code=422, detail="Could not read the cough file") from error
     if audio is None:
         raise HTTPException(status_code=422, detail="The cough recording is too short or silent")
-    features = describe(audio)[np.newaxis].astype(np.float32)
-    score = float(model.run(features)[0].ravel()[0])
+    if model.input_kind == "log_mel":
+        inputs = log_mel(audio)[np.newaxis, np.newaxis]
+    elif model.input_kind == "features168":
+        inputs = describe(audio)[np.newaxis].astype(np.float32)
+    else:
+        # A model that also needs clinical answers can't run until /screen collects them.
+        return None
+    score = float(model.run(inputs)[0].ravel()[0])
     return ModelScore(
         score=round(score, 4),
         flagged=score >= model.threshold,

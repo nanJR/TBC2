@@ -28,6 +28,7 @@ uv run python cxr/find_duplicates.py                # rewrites cxr/exclude.txt; 
 uv run python cxr/extract_features.py               # ~1.5 h on CPU, resumable; then cxr/train_classifier.py
 uv run python cough/extract_features.py             # ~30 s; then cough/train_classifier.py
 uv run python export/export_cxr.py                  # writes services/api/models/xray; also export_cough.py
+uv run python cough/train_cnn.py --smoke            # proves the CODA/GPU trainer runs; see docs/cough-training-runbook.md
 
 # repo root
 ./scripts/dev.sh                                    # both servers, logs tagged [api]/[web]
