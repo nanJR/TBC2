@@ -65,6 +65,73 @@ each clip appears twice, as `_clean` and `_noisy` (added noise for training).
   separately and their scores are combined in
   `services/api/app/routers/screen.py`.
 
+## Official figures for calibration
+
+Use these when replacing placeholder rates. Page numbers are PDF pages.
+
+**Treatment outcomes of drug-sensitive TB patients notified in 2022**, from the
+[India TB Report 2024](https://tbcindia.mohfw.gov.in/wp-content/uploads/2024/10/TB-Report_for-Web_08_10-2024-1.pdf)
+Annexure tables 3.1 to 3.3 (pp. 218-223):
+
+| Group | Notified | Success | Died | Lost to follow-up | Failed | Regimen changed |
+| --- | --- | --- | --- | --- | --- | --- |
+| India, total | 23,60,036 | 87.6% | 3.6% | 2.1% | 0.5% | 1.4% |
+| India, public sector | 18,00,258 | 86.9% | 3.9% | 1.9% | 0.5% | 1.6% |
+| India, private sector | 5,59,778 | 89.5% | 2.7% | 2.6% | 0.4% | 0.8% |
+| Karnataka, total | 76,687 | 84.6% | 6.7% | 2.1% | 0.5% | 2.5% |
+| Karnataka, public sector | 64,794 | 83.9% | 7.3% | 2.3% | 0.5% | 2.7% |
+| Karnataka, private sector | 11,893 | 88.0% | 3.0% | 0.9% | 0.3% | 1.0% |
+
+- **More patients die than are lost to follow-up**, nationally and in Karnataka.
+- Lost to follow-up varies by state, from 0.1% (Andhra Pradesh) to 7.5%
+  (Arunachal Pradesh), with Delhi and Nagaland at 4.7% and Bihar at 4.5% (pp. 222-223).
+- Drug-resistant TB is much worse (p. 58). On the shorter MDR/RR regimen (2022
+  cohort, 21,285 patients): 75% success, 10% died, 10% lost to follow-up. On all
+  MDR/RR treatment (2021 cohort, 33,555 patients): 74%, 12% and 9%.
+- 95% of diagnosed drug-sensitive patients started treatment in 2023 (p. 57).
+- 7.1% of the TB patients screened for alcohol use in 2023 were identified as users
+  (Section 7.6), while the studies it cites give 20.3-31.5%.
+
+**Screening and care rules**, from the
+[TB Mukt Bharat Abhiyaan 2026 campaign document](https://tbcindia.mohfw.gov.in/wp-content/uploads/2026/03/TB-Mukt-Bharat-Abhiyan-Campaign-2026-v6.pdf):
+
+- 7 Dec 2024 to 30 Dec 2025: 27.28 lakh new TB cases, of which 9.48 lakh had no
+  symptoms (pp. 3-4).
+- **Vulnerable groups (p. 7):** over 60, BMI under 18.5, diabetes, HIV, smokers,
+  alcohol use, past TB, household contacts of TB patients.
+- **Symptoms (p. 8, "10-S"):** cough over 2 weeks (any duration if vulnerable), fever,
+  night sweats, coughing blood, chest pain, shortness of breath, weight loss, loss of
+  appetite, fatigue, lymph node swelling or other extrapulmonary signs.
+- **Patient care (pp. 12-13):** differentiated care assessment for all patients, BMI
+  check, energy-dense supplements if BMI is under 18.5 for the first 2 months,
+  nutrition payment within 15 days, 99DOTS-lite missed calls for adherence, call
+  centre checks, ASHA visits weekly and CHO visits fortnightly.
+- **Tracked indicators (pp. 54-55):** vulnerable people reached, X-ray screening, NAAT
+  for presumptive cases, high-risk assessment, nutrition and Ni-kshay Mitra linkage,
+  preventive treatment.
+
+**Accuracy targets**, from WHO:
+
+| Source | Test type | Minimum sensitivity / specificity | Optimal |
+| --- | --- | --- | --- |
+| [2025 target profiles](https://www.who.int/publications/i/item/9789240113572) | One-step screening | 90% / 80% | 95% / 95% |
+| 2025 target profiles | First step of two-step screening | 90% / 60% | 95% / 85% |
+| 2025 target profiles | High-specificity screening | 60% / 98% | 70% / 98% |
+| Older triage target (the one our results files check) | Triage | 90% / 70% | |
+
+The same 2025 document says people with TB symptoms should go straight to diagnostic
+evaluation without further screening.
+
+[WHO's June 2025 CAD assessment](https://www.who.int/publications/i/item/9789240110373)
+required partial AUC of at least 0.9 in the 40-60% specificity range (the upper
+confidence limit could reach it) and at least 40% specificity at 90% sensitivity.
+CAD4TB v7, DrAid v2.4.4-6, Genki Edge v3.4.2, InferRead DR Chest v1.0.1.1, Insight CXR
+v3.1 and qXR v4.0 met this. JVIEWER-X v5.0.0 and Radify Chest v3.8.0 did not.
+
+**Figures that disagree:** PIB reports 90% treatment success under the campaign, while
+the India TB Report gives 87.6% for the 2022 cohort. These cover different periods, and
+the PIB releases don't state a cohort, so use the report's table for calibration.
+
 ## Synthetic patients
 
 ```bash
