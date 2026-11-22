@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     # Where the exported models live. See app/inference/registry.py.
     model_dir: str = "models"
 
+    # Secret used to hash ABHA numbers, so the numbers themselves are never stored.
+    # Set your own in .env; this default is only for local development.
+    abha_hash_key: str = "dev-only-change-me"
+
     # Filled in later, when we connect Supabase.
     database_url: str | None = None
 

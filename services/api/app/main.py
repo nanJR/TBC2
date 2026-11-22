@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.routers import actions, patients, screen
+from app.routers import actions, cases, counter, patients, screen
 from app.routers.screen import MAX_REQUEST_BYTES
 
 app = FastAPI(
@@ -22,7 +22,9 @@ app = FastAPI(
 # Refuse oversized uploads before reading them, so one request can't fill the memory.
 @app.middleware("http")
 async def limit_screen_upload_size(request: Request, call_next):
-    if request.method == "POST" and request.url.path == "/screen":
+    path = request.url.path
+    is_upload = path == "/screen" or (path.startswith("/cases/") and path.endswith("/xray"))
+    if request.method == "POST" and is_upload:
         length = request.headers.get("content-length", "")
         if not length.isdigit() or int(length) > MAX_REQUEST_BYTES:
             return JSONResponse({"detail": "Upload is too large"}, status_code=413)
@@ -41,6 +43,8 @@ app.add_middleware(
 app.include_router(screen.router)
 app.include_router(patients.router)
 app.include_router(actions.router)
+app.include_router(counter.router)
+app.include_router(cases.router)
 
 
 @app.get("/health", tags=["system"])

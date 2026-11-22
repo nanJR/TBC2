@@ -1,51 +1,66 @@
 import Link from "next/link";
+import { ArrowRight, Store, UserRound } from "lucide-react";
 
+import { AppFooter } from "@/components/app-footer";
 import { BackendStatus } from "@/components/backend-status";
-import { buttonVariants } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { LogoMark } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 
-// Home page. Later this links to the ASHA screening flow (app/(asha))
-// and the district dashboard (app/(district)).
+// Home page: pick a portal. The counter portal is for pharmacists and local
+// practitioners; the ASHA portal is for the health worker who follows people up.
+const PORTALS = [
+  {
+    href: "/counter",
+    icon: Store,
+    title: "Counter Portal",
+    text: "Pharmacists and local practitioners: fetch ABHA history, mark symptoms, analyse a cough and forward people at risk to an ASHA.",
+  },
+  {
+    href: "/asha",
+    icon: UserRound,
+    title: "ASHA Portal",
+    text: "ASHA workers: follow up forwarded cases, book the mobile X-ray van, combine risks, record NAAT results and track treatment every day.",
+  },
+];
+
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 py-12">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight">TBC²</h1>
-        <p className="text-muted-foreground mt-1">
-          TB care coordinator: screen at the chemist&apos;s counter, refer for a free test, and
-          help people finish treatment.
-        </p>
-      </header>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Link href="/screen" className={buttonVariants({ size: "lg" })}>
-          Counter screen (chemist)
-        </Link>
-        <Link href="/dashboard" className={buttonVariants({ size: "lg", variant: "outline" })}>
-          District dashboard
-        </Link>
+    <>
+      <div className="absolute top-4 right-4 flex items-center gap-3">
+        <BackendStatus />
+        <ThemeToggle />
       </div>
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-10 px-4 py-16">
+        <header className="flex flex-col items-center gap-3 text-center">
+          <h1>
+            <LogoMark className="h-40" />
+          </h1>
+          <p className="text-3xl font-bold tracking-tight">TB Care Coordinator</p>
+          <p className="text-muted-foreground max-w-xl">
+            Screen at the counter, follow up in the community, and help people finish
+            treatment.
+          </p>
+        </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>System check</CardTitle>
-          <CardDescription>Is the front end talking to the back end?</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BackendStatus />
-        </CardContent>
-      </Card>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {PORTALS.map((p) => (
+            <Link
+              key={p.href}
+              href={p.href}
+              className="bg-card hover:border-primary group flex flex-col gap-3 rounded-2xl border p-6 transition-colors"
+            >
+              <p.icon className="text-primary size-6" aria-hidden />
+              <span className="text-lg font-semibold">{p.title}</span>
+              <span className="text-muted-foreground text-sm">{p.text}</span>
+              <span className="text-primary mt-auto inline-flex items-center gap-1 text-sm font-medium">
+                Open <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </Link>
+          ))}
+        </div>
 
-      <p className="text-muted-foreground text-xs">
-        Software prototype for learning only. Not for clinical use. Public datasets,
-        simulated patients and a simulated ASHA only.
-      </p>
-    </main>
+      </main>
+      <AppFooter />
+    </>
   );
 }

@@ -17,17 +17,21 @@ export function BackendStatus() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm">
-        Back end:{" "}
-        {status === "checking" && <span>checking…</span>}
-        {status === "up" && <span className="font-medium text-green-700">running</span>}
-        {status === "down" && (
-          <span className="font-medium text-red-700">
-            not reachable (start it with <code>uv run fastapi dev app/main.py</code>)
-          </span>
-        )}
-      </p>
-    </div>
+    // A small pill: green dot when the API answers, red when it doesn't.
+    <span
+      className="bg-card text-muted-foreground inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs"
+      title={status === "down" ? "Start it with: uv run fastapi dev app/main.py" : undefined}
+    >
+      <span
+        aria-hidden
+        className={`size-2 rounded-full ${
+          status === "up" ? "bg-ok" : status === "down" ? "bg-alert" : "bg-muted-foreground"
+        }`}
+      />
+      Back End:{" "}
+      {status === "checking" && "Checking…"}
+      {status === "up" && <span className="text-ok font-medium">Running</span>}
+      {status === "down" && <span className="text-alert font-medium">Not Reachable</span>}
+    </span>
   );
 }

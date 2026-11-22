@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
     // security advisory. "security" is the default; we set it so it is easy to see.
     agentUpgrade: "security",
   },
+  // Old addresses from earlier versions still work: the counter check moved to
+  // /counter and the district dashboard became the ASHA portal.
+  redirects() {
+    return [
+      { source: "/screen", destination: "/counter", permanent: false },
+      { source: "/dashboard", destination: "/asha", permanent: false },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {

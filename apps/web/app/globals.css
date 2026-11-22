@@ -7,9 +7,16 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-inter);
+  /* Status pill colours from the Figma: green = done/ok, amber = waiting, red = needs action. */
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-wait: var(--wait);
+  --color-wait-soft: var(--wait-soft);
+  --color-alert: var(--alert);
+  --color-alert-soft: var(--alert-soft);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,72 +56,89 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* TBC² theme: white cards on a very light grey page, teal-green actions (from the Figma). */
+  --background: #f6faf8;
+  --foreground: #16201c;
+  --card: #ffffff;
+  --card-foreground: #16201c;
+  --popover: #ffffff;
+  --popover-foreground: #16201c;
+  --primary: #1d7a5a;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f3f2;
+  --secondary-foreground: #16201c;
+  --muted: #f1f3f2;
+  --muted-foreground: #5f6b66;
+  --accent: #eef6f2;
+  --accent-foreground: #1d7a5a;
+  --destructive: #c0392b;
+  --border: #e4e7e5;
+  --input: #d9dedb;
+  --ring: #1d7a5a;
+  --chart-1: #1d7a5a;
+  --chart-2: #5fb08f;
+  --chart-3: #a8d5c2;
+  --chart-4: #b45309;
+  --chart-5: #c0392b;
+  --radius: 0.875rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #16201c;
+  --sidebar-primary: #1d7a5a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef6f2;
+  --sidebar-accent-foreground: #1d7a5a;
+  --sidebar-border: #e4e7e5;
+  --sidebar-ring: #1d7a5a;
+  --ok: #1e7b4f;
+  --ok-soft: #e6f4ec;
+  --wait: #b45309;
+  --wait-soft: #fff3e0;
+  --alert: #c0392b;
+  --alert-soft: #fdecec;
+  /* Faint line drawings of lab equipment behind the cards (public/watermark-*.svg). */
+  --watermark: url("/watermark-light.svg");
 }
 
+/* Dark mode: deep green-grey surfaces, a brighter teal so it stays readable. */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0d1513;
+  --foreground: #e4ede9;
+  --card: #141f1c;
+  --card-foreground: #e4ede9;
+  --popover: #141f1c;
+  --popover-foreground: #e4ede9;
+  --primary: #3fb68b;
+  --primary-foreground: #04140e;
+  --secondary: #1b2925;
+  --secondary-foreground: #e4ede9;
+  --muted: #1b2925;
+  --muted-foreground: #95a8a0;
+  --accent: #15342a;
+  --accent-foreground: #6fd3ab;
+  --destructive: #ef6b5e;
+  --border: #25352f;
+  --input: #2e413a;
+  --ring: #3fb68b;
+  --chart-1: #3fb68b;
+  --chart-2: #2a8a68;
+  --chart-3: #1d5c46;
+  --chart-4: #f0a54a;
+  --chart-5: #ef6b5e;
+  --sidebar: #141f1c;
+  --sidebar-foreground: #e4ede9;
+  --sidebar-primary: #3fb68b;
+  --sidebar-primary-foreground: #04140e;
+  --sidebar-accent: #15342a;
+  --sidebar-accent-foreground: #6fd3ab;
+  --sidebar-border: #25352f;
+  --sidebar-ring: #3fb68b;
+  --ok: #5fd19f;
+  --ok-soft: #133a2b;
+  --wait: #f0a54a;
+  --wait-soft: #3a2a14;
+  --alert: #ef6b5e;
+  --alert-soft: #3d1b18;
+  --watermark: url("/watermark-dark.svg");
 }
 
 @layer base {
@@ -123,6 +147,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: var(--watermark);
+    background-size: 320px;
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;

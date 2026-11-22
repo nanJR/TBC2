@@ -19,7 +19,8 @@ client = TestClient(app)
 
 
 def post(data=None, files=None):
-    return client.post("/screen", data={"age": 40, **(data or {})}, files=files)
+    person = {"age": 40, "sex": "F", "district": "Chamarajanagar"}
+    return client.post("/screen", data={**person, **(data or {})}, files=files)
 
 
 def test_symptoms_go_to_naat_even_when_no_model_flags(no_models):
@@ -40,7 +41,7 @@ def test_vulnerable_person_without_symptoms_is_offered_an_xray(no_models):
 
 
 def test_age_over_60_counts_as_vulnerable(no_models):
-    body = client.post("/screen", data={"age": 65}).json()
+    body = post({"age": 65}).json()
     assert body["next_step"] == "offer_xray"
 
 
@@ -54,11 +55,20 @@ def test_flagged_xray_goes_to_naat():
     assert decide(set(), set(), xray_flagged=True, xray_scored=True)[0] == "naat"
 
 
-def test_experimental_cough_never_changes_the_next_step(tiny_models, cough_wav):
+def test_experimental_cough_can_only_add_an_xray(tiny_models, cough_wav):
+    # The tiny cough model always flags. It suggests an X-ray, but never a NAAT.
     body = post(files={"cough": ("c.wav", cough_wav, "audio/wav")}).json()
     assert body["cough"]["counts_towards_referral"] is False
-    assert body["next_step"] == "routine_care"
-    assert body["risk_score"] is None
+    assert body["cough"]["flagged"] is True
+    assert body["next_step"] == "offer_xray"
+    assert body["risk_score"] is not None
+
+
+def test_flagged_cough_never_means_naat_and_a_clear_xray_settles_it():
+    assert decide(set(), set(), False, xray_scored=False, cough_flagged=True)[0] == "offer_xray"
+    assert decide(set(), set(), False, xray_scored=True, cough_flagged=True)[0] == "routine_care"
+    # Symptoms still go to NAAT whatever the cough model says.
+    assert decide({"fever"}, set(), False, xray_scored=True, cough_flagged=False)[0] == "naat"
 
 
 def test_real_xray_score_comes_with_heatmap(tiny_models, xray_png):
@@ -78,9 +88,7 @@ def test_phone_photo_gets_a_warning(tiny_models, xray_png):
 
 
 def test_models_are_not_used_under_15(tiny_models, xray_png):
-    response = client.post(
-        "/screen", data={"age": 12}, files={"xray": ("x.png", xray_png, "image/png")}
-    )
+    response = post({"age": 12}, {"xray": ("x.png", xray_png, "image/png")})
     body = response.json()
     assert body["xray"] is None
     assert any("aged 15 and over" in note for note in body["notes"])

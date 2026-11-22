@@ -36,12 +36,20 @@ def test_missed_dose_ladder_follows_3_and_7_days():
     assert ladder_step(p.model_copy(update={"missed_in_a_row": 7})) == "asha_visit"
 
 
-def test_golden_check_mismatch_always_means_high_risk():
+def test_isoscreen_without_isoniazid_always_means_high_risk():
     for p in PATIENTS.values():
         entry = mock_risk(p)
-        if any(c.result == "mismatch" for c in p.golden_checks):
+        if any(t.result == "inh_not_detected" for t in p.isoscreen_tests):
             assert entry.risk_score >= 0.6
-            assert entry.golden_check_every_days == 14
+            assert entry.isoscreen_every_days == 14
+
+
+def test_drug_resistant_patients_get_no_isoscreen_tests():
+    # Their regimen has no isoniazid, so the urine strip has nothing to find.
+    for p in PATIENTS.values():
+        if p.regimen == "drug-resistant":
+            assert p.isoscreen_tests == []
+            assert mock_risk(p).isoscreen_every_days is None
 
 
 def test_every_drafted_action_starts_pending_with_a_reason():
