@@ -1,0 +1,31 @@
+# Render Blueprint: the TBC² API as a free Docker web service in Singapore.
+# Create it on render.com with New → Blueprint → this repo. Render asks for the three
+# values marked "sync: false" (secrets are never stored in git). The website is on
+# Vercel (apps/web), so FRONTEND_ORIGIN is its address, e.g. https://tbc2.vercel.app
+# (several allowed, separated by commas).
+services:
+  - type: web
+    name: tbc2-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./services/api/Dockerfile
+    dockerContext: ./services/api
+    healthCheckPath: /health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - services/api/**
+    envVars:
+      - key: SUPABASE_URL
+        value: https://mrgkareufoktbhbvtbao.supabase.co
+      - key: REQUIRE_LOGIN
+        value: "true"
+      - key: MODEL_REPO
+        value: nanJR/tbc2-models
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: HF_TOKEN
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
