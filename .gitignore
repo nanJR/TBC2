@@ -91,3 +91,8 @@ desktop.ini
 
 # --- Local Claude Code settings ----------------------------------
 .claude/
+
+# Demo kit copies of dataset files (rebuilt by demo-kit/build_demo_kit.py)
+demo-kit/media/
+# Our own generated error-test files (a silent clip, a text file), not dataset audio.
+!demo-kit/test-files/*.wav
