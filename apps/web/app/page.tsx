@@ -17,12 +17,15 @@ export default function Home() {
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 py-12">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">TBC²</h1>
-        <p className="text-muted-foreground mt-1">AI-powered TB care coordinator</p>
+        <p className="text-muted-foreground mt-1">
+          TB care coordinator: screen at the chemist&apos;s counter, refer for a free test, and
+          help people finish treatment.
+        </p>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Link href="/screen" className={buttonVariants({ size: "lg" })}>
-          ASHA: screen a person
+          Counter screen (chemist)
         </Link>
         <Link href="/dashboard" className={buttonVariants({ size: "lg", variant: "outline" })}>
           District dashboard
@@ -40,8 +43,8 @@ export default function Home() {
       </Card>
 
       <p className="text-muted-foreground text-xs">
-        Prototype for learning only. Not for clinical use. Public datasets and
-        synthetic patients only.
+        Software prototype for learning only. Not for clinical use. Public datasets,
+        simulated patients and a simulated ASHA only.
       </p>
     </main>
   );

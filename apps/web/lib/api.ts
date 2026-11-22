@@ -110,19 +110,37 @@ export type Patient = {
   previously_treated: boolean;
   has_phone: boolean;
   gets_nutrition_support: boolean;
+  dose_log_last_28_days: DoseDay[]; // oldest first, today last
+  missed_in_a_row: number;
+  golden_checks: GoldenCheck[];
+  side_effect_reported: boolean;
 };
+
+export type DoseDay = "taken" | "missed";
+
+// A surprise urine test. "mismatch" = reported taken, but the urine says no.
+export type GoldenCheck = {
+  day_on_treatment: number;
+  result: "match" | "mismatch";
+};
+
+// Missed-dose ladder: call after 3 missed days in a row, ASHA visit after 7.
+export type LadderStep = "on_track" | "call" | "asha_visit";
 
 export type RiskEntry = {
   patient: Patient;
   risk_score: number;
   reasons: string[];
+  ladder_step: LadderStep;
+  golden_check_every_days: number;
   is_mock: boolean;
 };
 
 export type Action = {
   action_id: number;
   patient_id: string;
-  type: "sms" | "home_visit" | "nutrition_support";
+  type: "call" | "asha_visit" | "golden_check" | "side_effect_referral";
+  reason: string;
   draft: string;
   status: "pending" | "approved" | "rejected";
 };
