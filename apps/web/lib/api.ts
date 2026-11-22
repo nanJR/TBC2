@@ -5,6 +5,8 @@
 // The types below mirror services/api/app/schemas.py and ScreenResult in
 // app/routers/screen.py by hand. If you change one side, change the other.
 
+import { accessToken } from "@/lib/supabase";
+
 // NEXT_PUBLIC_ variables are readable in the browser. Set it in .env.local
 // (copy .env.example). Falls back to the local FastAPI server.
 export const API_URL =
@@ -259,6 +261,31 @@ export type Action = {
 
 // ---- Helpers ----
 
+export type Me = {
+  signed_in: boolean;
+  email: string | null;
+  role: "practitioner" | "asha" | "coordinator" | null;
+  full_name: string | null;
+  district: string | null;
+  place: string | null;
+};
+
+/** Adds the signed-in user's token, so the back end knows who is asking. */
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = await accessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/** Every request goes through here, with the login token added. Signed-out users are
+ * sent to /login by components/auth-gate.tsx, and Supabase refreshes tokens itself. */
+async function call(path: string, init: RequestInit = {}): Promise<Response> {
+  return fetch(`${API_URL}${path}`, {
+    cache: "no-store",
+    ...init,
+    headers: { ...(init.headers as Record<string, string>), ...(await authHeaders()) },
+  });
+}
+
 /** Turn an error response into a readable message (FastAPI puts it in "detail"). */
 async function errorMessage(res: Response, fallback: string): Promise<string> {
   const body: { detail?: unknown } = await res.json().catch(() => ({}));
@@ -267,7 +294,7 @@ async function errorMessage(res: Response, fallback: string): Promise<string> {
 
 // Small helper so every JSON call handles errors the same way.
 async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { cache: "no-store", ...init });
+  const res = await call(path, init);
   if (!res.ok) throw new Error(await errorMessage(res, `${path} failed: ${res.status}`));
   return res.json();
 }
@@ -306,7 +333,7 @@ export async function screen(request: ScreenRequest): Promise<ScreenResult> {
   request.vulnerabilities.forEach((v) => form.append("vulnerabilities", v));
   if (request.cough) form.append("cough", request.cough, "cough.wav");
 
-  const res = await fetch(`${API_URL}/screen`, { method: "POST", body: form });
+  const res = await call("/screen", { method: "POST", body: form });
   if (!res.ok) throw new Error(await errorMessage(res, "Screening failed."));
   return res.json();
 }
@@ -323,6 +350,9 @@ export const dismissScreening = (id: string, reason: DismissReason) =>
   postJson<Screening>(`/screenings/${id}/dismiss`, { reason });
 
 export const getDistricts = () => getJson<string[]>("/districts");
+
+/** Who is signed in, with their role. signed_in is false when login is turned off. */
+export const getMe = () => getJson<Me>("/me");
 
 // ---- ASHA ----
 
@@ -349,7 +379,7 @@ export const bookVan = (id: string, slotId: string) =>
 export async function uploadCaseXray(id: string, xray: File): Promise<Case> {
   const form = new FormData();
   form.append("xray", xray);
-  const res = await fetch(`${API_URL}/cases/${id}/xray`, { method: "POST", body: form });
+  const res = await call(`/cases/${id}/xray`, { method: "POST", body: form });
   if (!res.ok) throw new Error(await errorMessage(res, "X-ray upload failed."));
   return res.json();
 }

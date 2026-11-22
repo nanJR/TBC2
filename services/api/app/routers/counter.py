@@ -8,6 +8,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
+from app import db
 from app.mock_data import ABHA_DEMO, ASHAS, CASES, SCREENINGS, abha_key, case_from
 from app.schemas import AbhaLookup, AbhaRecord, Case, DismissIn, ForwardIn, Screening
 
@@ -61,6 +62,8 @@ def forward(screening_id: str, body: ForwardIn) -> Case:
     case.is_mock = screening.is_mock
     CASES[case.case_id] = case
     screening.decision, screening.case_id = "forwarded", case.case_id
+    db.save_case(case)
+    db.save_screening(screening)
     return case
 
 
@@ -68,4 +71,5 @@ def forward(screening_id: str, body: ForwardIn) -> Case:
 def dismiss(screening_id: str, body: DismissIn) -> Screening:
     screening = _pending(screening_id)
     screening.decision, screening.dismiss_reason = "dismissed", body.reason
+    db.save_screening(screening)
     return screening

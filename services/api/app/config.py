@@ -21,8 +21,22 @@ class Settings(BaseSettings):
     # Set your own in .env; this default is only for local development.
     abha_hash_key: str = "dev-only-change-me"
 
-    # Filled in later, when we connect Supabase.
-    database_url: str | None = None
+    # Supabase (Mumbai). Leave these empty and everything stays in memory, with no login:
+    # that's how the tests run, and a fallback if the network fails during a demo.
+    # The secret key is a server-only key that bypasses row-level security. Never put it
+    # in the front end or in git.
+    supabase_url: str | None = None
+    supabase_secret_key: str | None = None
+    # Ask for a signed-in user (Supabase Auth) on every data request.
+    require_login: bool = True
+
+    @property
+    def supabase_enabled(self) -> bool:
+        return bool(self.supabase_url and self.supabase_secret_key)
+
+    @property
+    def login_required(self) -> bool:
+        return self.supabase_enabled and self.require_login
 
 
 settings = Settings()

@@ -13,6 +13,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from starlette.formparsers import MultiPartParser
 
+from app import db
 from app.inference.referral import NextStep, Symptom, Vulnerability, decide
 from app.inference.scoring import (
     MAX_COUGH_BYTES,
@@ -143,6 +144,7 @@ def screen(
         is_mock=False,
     )
     SCREENINGS[screening.screening_id] = screening
+    db.save_screening(screening)
 
     return ScreenResult(
         screening_id=screening.screening_id,

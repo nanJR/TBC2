@@ -63,6 +63,15 @@ def _write(folder, graph, threshold, counts, status):
     (folder / "model.json").write_text(json.dumps(meta))
 
 
+@pytest.fixture(autouse=True)
+def no_supabase(monkeypatch):
+    """Tests never use the real Supabase project, even if services/api/.env has a key:
+    no network calls, no saved test data, and no login (tests that need login turn it
+    on themselves with a fake, see test_auth.py)."""
+    monkeypatch.setattr(settings, "supabase_url", None)
+    monkeypatch.setattr(settings, "supabase_secret_key", None)
+
+
 @pytest.fixture
 def tiny_models(tmp_path, monkeypatch):
     """Point the server at the fake models for one test."""

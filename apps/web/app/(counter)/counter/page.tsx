@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CalendarDays } from "lucide-react";
 
 import { AppFooter } from "@/components/app-footer";
+import { AuthGate } from "@/components/auth-gate";
 import { AppHeader } from "@/components/app-header";
 import { NewScreening } from "@/components/counter/new-screening";
 import { RecentScreenings } from "@/components/counter/recent-screenings";
@@ -30,7 +31,7 @@ import { useThisWeek } from "@/lib/week";
 
 const DISTRICT = "Chamarajanagar"; // the demo counter is in Hanur taluk, a rural forest-fringe area
 
-export default function CounterPage() {
+function CounterPortal() {
   const [districts, setDistricts] = useState<string[]>([DISTRICT]);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [screenings, setScreenings] = useState<Screening[]>([]);
@@ -131,5 +132,14 @@ export default function CounterPage() {
         </div>
       )}
     </>
+  );
+}
+
+// Only signed-in pharmacists or practitioners (when login is on).
+export default function CounterPage() {
+  return (
+    <AuthGate role="practitioner">
+      <CounterPortal />
+    </AuthGate>
   );
 }

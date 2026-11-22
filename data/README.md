@@ -63,8 +63,35 @@ each clip appears twice, as `_clean` and `_noisy` (added noise for training).
 - **JU-TB doesn't say where its images came from**, so its test score may be
   higher than real-world performance.
 - **No person has both a cough and an X-ray.** The two models are trained
-  separately and their scores are combined in
-  `services/api/app/routers/screen.py`.
+  separately and their scores are combined by a simple rule (the higher of the
+  two, each rescaled so its threshold is 0.5) in `services/api/app/routers/cases.py`.
+
+## X-ray model results (22 Nov 2026)
+
+EfficientNet-B0 as a fixed feature extractor plus logistic regression, threshold
+0.7536, scored through the same code `/screen` uses. 95% CIs by bootstrap.
+
+| Test set | Images (TB) | Sensitivity | Specificity | AUROC (95% CI) |
+| --- | --- | --- | --- | --- |
+| JU-TB test, deduplicated | 2,659 (1,083) | 90.4% | 98.5% | 0.989 (0.986–0.992) |
+| JU-TB, grey images only | 2,453 (877) | 88.1% | 98.5% | 0.987 (0.982–0.990) |
+| JU-TB, 640×640 only | 2,127 (894) | 89.0% | 98.6% | 0.987 (0.982–0.991) |
+| **Shenzhen** (NLM, outside test) | 40 (20) | 45% | 90% | **0.78** (0.61–0.92) |
+| **Montgomery** (NLM, outside test) | 117 (37) | 78% | 47.5% | **0.67** (0.57–0.77) |
+
+- Removing the tint and size shortcuts barely changes the JU-TB score, so the
+  model does read the lungs. But on X-rays from other hospitals it is far
+  weaker, and one threshold doesn't transfer (Shenzhen misses TB, Montgomery
+  over-calls). Padding images to a square instead of centre-cropping made the
+  outside results worse, so this is domain shift, not a preprocessing bug.
+- Shenzhen is a 40-image sample (wide CI); 21 of 138 Montgomery images were not
+  downloaded. Both live in `data/raw/CXR_external/` (git-ignored). Cite Jaeger
+  et al. 2014 (NLM).
+- Say it this way: "95% accuracy on a deduplicated same-source test; outside
+  test AUROC 0.67–0.78, so the next step is fine-tuning on mixed sources."
+- Demo images (grey, 640×640, all scored correctly): TB `tb5494`, `tb184`,
+  `tb18989`; Normal `normal4104`, `normal25087`, `normal25333`. Copies are in
+  `data/raw/demo/` (git-ignored).
 
 ## Official figures for calibration
 

@@ -6,6 +6,7 @@ Human-in-the-loop rule: nothing is ever sent unless a person approves it here.
 
 from fastapi import APIRouter, HTTPException
 
+from app import db
 from app.mock_data import ACTIONS
 from app.schemas import Action, ActionStatus
 
@@ -25,6 +26,7 @@ def _decide(action_id: int, new_status: ActionStatus) -> Action:
     if action.status != "pending":
         raise HTTPException(status_code=409, detail=f"Action already {action.status}")
     action.status = new_status
+    db.save_action(action)
     return action
 
 

@@ -2,16 +2,11 @@
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.mock_data import DISTRICTS, PATIENTS, TODAY, mock_risk, record_dose
+from app import db
+from app.mock_data import PATIENTS, TODAY, mock_risk, record_dose
 from app.schemas import DoseIn, IsoScreenIn, IsoScreenTest, Patient, RiskEntry
 
 router = APIRouter(tags=["patients"])
-
-
-@router.get("/districts", response_model=list[str])
-def list_districts() -> list[str]:
-    """The districts this prototype covers, for drop-down lists."""
-    return sorted(DISTRICTS)
 
 
 @router.get("/patients", response_model=list[Patient])
@@ -37,6 +32,7 @@ def log_dose(patient_id: str, body: DoseIn) -> RiskEntry:
     if patient.last_dose_logged_on == TODAY:
         raise HTTPException(status_code=409, detail="Today's dose is already recorded")
     record_dose(patient, body.status)
+    db.save_patient(patient)
     return mock_risk(patient)
 
 
@@ -55,6 +51,7 @@ def log_isoscreen(patient_id: str, body: IsoScreenIn) -> RiskEntry:
             hours_since_dose=body.hours_since_dose,
         )
     )
+    db.save_patient(patient)
     return mock_risk(patient)
 
 

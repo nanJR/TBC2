@@ -17,15 +17,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
+from app import db
 from app.inference.referral import decide
 from app.inference.scoring import band_of, risk_of, score_xray
-from app.mock_data import CASES, SCREENINGS, VAN_SLOTS, start_treatment
+from app.mock_data import CASES, VAN_SLOTS, start_treatment
 from app.schemas import (
     Case,
     CloseIn,
     ContactIn,
     NaatIn,
-    Overview,
     ScheduleIn,
     StartTreatmentIn,
     VanReadingIn,
@@ -44,25 +44,6 @@ def van_slots(district: str | None = None) -> list[VanSlot]:
     return sorted(slots, key=lambda s: (s.day, s.site))
 
 
-@router.get("/overview", response_model=Overview)
-def overview(district: str | None = None) -> Overview:
-    """Counts for the patient-journey card, from the counter check to treatment."""
-    screenings = [s for s in SCREENINGS.values() if district in (None, s.district)]
-    cases = [c for c in CASES.values() if district in (None, c.district)]
-    now = datetime.now()
-    return Overview(
-        screened=len(screenings),
-        forwarded=sum(s.decision == "forwarded" for s in screenings),
-        tested=sum(
-            c.xray_source is not None or c.naat_result not in (None, "inconclusive") for c in cases
-        ),
-        on_treatment=sum(c.status == "on_treatment" for c in cases),
-        awaiting_contact=sum(c.status == "new" for c in cases),
-        overdue=sum(c.status == "new" and now > c.contact_due_at for c in cases),
-        is_mock=True,
-    )
-
-
 @router.get("/cases", response_model=list[Case])
 def list_cases(district: str | None = None) -> list[Case]:
     """Newest first."""
@@ -77,6 +58,7 @@ def _case(case_id: str, *allowed: str) -> Case:
         raise HTTPException(status_code=404, detail="Case not found")
     if allowed and case.status not in allowed:
         raise HTTPException(status_code=409, detail=f"Not possible while the case is {case.status}")
+    db.save_case(case)
     return case
 
 
@@ -91,6 +73,7 @@ def contact(case_id: str, body: ContactIn) -> Case:
     case.contact_attempts += 1
     if body.reached:
         case.status, case.contacted_at = "contacted", datetime.now()
+    db.save_case(case)
     return case
 
 
@@ -101,6 +84,7 @@ def sputum(case_id: str) -> Case:
     if case.sputum_collected_at is not None:
         raise HTTPException(status_code=409, detail="A sample is already with the lab")
     case.sputum_collected_at = datetime.now()
+    db.save_case(case)
     return case
 
 
@@ -113,9 +97,13 @@ def schedule(case_id: str, body: ScheduleIn) -> Case:
     if slot.booked >= slot.capacity:
         raise HTTPException(status_code=409, detail="That van visit is full")
     if case.xray_slot is not None:  # moving to another day frees the old place
-        VAN_SLOTS[case.xray_slot.slot_id].booked -= 1
+        old = VAN_SLOTS[case.xray_slot.slot_id]
+        old.booked -= 1
+        db.save_slot(old)
     slot.booked += 1
+    db.save_slot(slot)
     case.xray_slot, case.status = slot.model_copy(), "xray_booked"
+    db.save_case(case)
     return case
 
 
@@ -131,6 +119,7 @@ def upload_xray(
     xray_score, _heatmap = scored
     case.xray_source, case.van_reading = "upload", None
     case.xray_risk, case.status = risk_of("xray", xray_score), "xray_done"
+    db.save_case(case)
     return case
 
 
@@ -140,6 +129,7 @@ def van_reading(case_id: str, body: VanReadingIn) -> Case:
     case = _case(case_id, "xray_booked", "xray_done")
     case.xray_source, case.van_reading, case.xray_risk = "van_reading", body.reading, None
     case.status = "xray_done"
+    db.save_case(case)
     return case
 
 
@@ -164,6 +154,7 @@ def combine(case_id: str) -> Case:
         cough_flagged=(case.cough_risk or 0) >= 0.5,
     )
     case.status = "risk_combined"
+    db.save_case(case)
     return case
 
 
@@ -181,6 +172,7 @@ def naat(case_id: str, body: NaatIn) -> Case:
         case.status, case.closed_reason = "closed", "NAAT: MTB not detected"
     else:
         case.status = "naat_positive"
+    db.save_case(case)
     return case
 
 
@@ -189,9 +181,11 @@ def begin_treatment(case_id: str, body: StartTreatmentIn) -> Case:
     """The PHC Medical Officer started treatment. The person joins daily tracking."""
     case = _case(case_id, "naat_positive")
     patient = start_treatment(case, body, case.naat_result)
+    db.save_patient(patient)
     case.status, case.patient_id = "on_treatment", patient.patient_id
     case.mo_name, case.nikshay_id = body.mo_name, body.nikshay_id
     case.notified_in_nikshay = body.notified_in_nikshay
+    db.save_case(case)
     return case
 
 
@@ -201,4 +195,5 @@ def close(case_id: str, body: CloseIn) -> Case:
     if case.status in FINISHED:
         raise HTTPException(status_code=409, detail="This case is already finished")
     case.status, case.closed_reason = "closed", body.reason.replace("_", " ")
+    db.save_case(case)
     return case

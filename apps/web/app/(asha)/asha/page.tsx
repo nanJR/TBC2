@@ -12,6 +12,7 @@ import { CalendarDays, ChevronRight } from "lucide-react";
 import { CaseDrawer } from "@/components/asha/case-drawer";
 import { PatientDrawer } from "@/components/asha/patient-drawer";
 import { AppFooter } from "@/components/app-footer";
+import { AuthGate } from "@/components/auth-gate";
 import { AppHeader } from "@/components/app-header";
 import { JourneyCard } from "@/components/journey-card";
 import { CountPill, Panel } from "@/components/panel";
@@ -151,7 +152,7 @@ function SuggestionCard(props: { a: Action; onOpen: () => void; onDecide: (d: "a
   );
 }
 
-export default function AshaPage() {
+function AshaPortal() {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [cases, setCases] = useState<Case[]>([]);
   const [risk, setRisk] = useState<RiskEntry[]>([]);
@@ -341,5 +342,14 @@ export default function AshaPage() {
         />
       )}
     </>
+  );
+}
+
+// Only signed-in ASHAs (when login is on).
+export default function AshaPage() {
+  return (
+    <AuthGate role="asha">
+      <AshaPortal />
+    </AuthGate>
   );
 }

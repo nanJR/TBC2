@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-TBC² is a TB care coordinator prototype by the team "The MedMinds". An ASHA phone app screens people for TB, and a district dashboard flags patients likely to drop out of treatment. It is a FastAPI back end (`services/api/`) plus a Next.js front end (`apps/web/`). `ml/` is a uv project for model training (`ml/cxr` and `ml/cough` are in progress, sharing metrics in `ml/evaluation.py`); `agent/` (LangGraph), `ml/dropout`, `ml/export` and `sim/` (Mesa) are still empty placeholders. The dev laptop has no CUDA GPU and WSL gets ~4 GB RAM, so training code must run on CPU in modest memory. **Prototype for learning only, not for clinical use.**
+TBC² (TB Care Coordinator) is a prototype by the team "The MedMinds". A **counter portal** lets a pharmacist or local practitioner screen a person (ABHA history, symptoms, a cough recording) and forward them by hand to an ASHA. The **ASHA portal** follows each case from first contact through the mobile X-ray van, a combined risk score and the NAAT to treatment, then tracks daily doses, IsoScreen urine tests and dropout risk. The demo is set in rural Chamarajanagar (Hanur taluk), Karnataka. It is a FastAPI back end (`services/api/`) plus a Next.js front end (`apps/web/`). `ml/` is a uv project for model training (`ml/cxr` and `ml/cough` are in progress, sharing metrics in `ml/evaluation.py`); `agent/` (LangGraph), `ml/dropout`, `ml/export` and `sim/` (Mesa) are still empty placeholders. The dev laptop has no CUDA GPU and WSL gets ~4 GB RAM, so training code must run on CPU in modest memory. **Prototype for learning only, not for clinical use.**
 
 ## Commands
 
@@ -37,7 +37,7 @@ API_PORT=8100 WEB_PORT=3100 ./scripts/dev.sh        # if 8000/3000 are taken
 python data/synthetic/generate_patients.py --n 5000 # -> data/processed/synthetic_patients.csv (stdlib only)
 ```
 
-No keys are needed: all data is in-memory mock data. `dev.sh` exports `FRONTEND_ORIGIN` (read by `app/config.py` for CORS) and `NEXT_PUBLIC_API_URL` (read by `lib/api.ts`). CI (`.github/workflows/ci.yml`) runs ruff check, ruff format --check and pytest, then `npm run lint` and `npm run build`.
+**Supabase (optional).** With `SUPABASE_SECRET_KEY` in `services/api/.env` and the two `NEXT_PUBLIC_SUPABASE_*` values in `apps/web/.env.local` (see the `.env.example` files), data is saved in Supabase project TBC2 (Mumbai) and login is required. Without them, everything runs in memory with no login (this is how tests and CI run). Schema and grants: `supabase/migrations/`. Demo accounts: `cd services/api && uv run python scripts/create_demo_users.py` (passwords live only in `.env`). `dev.sh` exports `FRONTEND_ORIGIN` (read by `app/config.py` for CORS) and `NEXT_PUBLIC_API_URL` (read by `lib/api.ts`). CI (`.github/workflows/ci.yml`) runs ruff check, ruff format --check and pytest, then `npm run lint` and `npm run build`.
 
 ## Off-limits
 
@@ -52,33 +52,41 @@ No keys are needed: all data is in-memory mock data. `dev.sh` exports `FRONTEND_
 - Pages call the back end only through the helpers in `apps/web/lib/api.ts`, never with a raw `fetch()`.
 - Cough results must include the TBscreen-only numbers. Coswara clips are all Healthy and recorded at home, so mixed-source scores are inflated (shortcut-check AUROC 0.99). Score per person, never per clip.
 - Every score response carries `is_mock`. Keep it `True` until a real model produces the number.
-- A model can add a TB referral but never cancel one. Symptoms always go to NAAT (`app/inference/referral.py`), following the TB Mukt Bharat Abhiyaan and WHO. A model only affects referral if its `model.json` has `counts_towards_referral: true`.
-- `/screen` holds uploads in memory and never stores them. Prepare images and sound only through `app/inference/image.py` and `audio.py`; training imports the same code, and the export scripts check that scores match.
-- JU-TB leaks its labels: every tinted test image is TB, and image size tracks the label. Quote X-ray results within these groups too (grey images alone: 88.4% sensitivity).
+- A model can add a TB referral but never cancel one. Symptoms always go to NAAT (`app/inference/referral.py`), following the TB Mukt Bharat Abhiyaan and WHO. A model only affects referral if its `model.json` has `counts_towards_referral: true`. One exception: the experimental cough model may add an `offer_xray` suggestion (an X-ray to double-check), never a NAAT.
+- Uploads (`/screen`, `/cases/{id}/xray`) are held in memory and never stored. Only answers and scores are saved (a `Screening`, then a `Case`). Forwarding to an ASHA is always the practitioner's manual decision and needs the person's contact consent; ABHA lookups need consent and only a keyed hash of the number is kept (`abha_key()`). Case steps run in order and each refuses with 409 when the case isn't at that step. Prepare images and sound only through `app/inference/image.py` and `audio.py`; training imports the same code, and the export scripts check that scores match.
+- JU-TB leaks its labels: every tinted test image is TB, and image size tracks the label. Quote X-ray results within these groups too (grey images alone: 88.1% sensitivity). The outside test is much weaker (Shenzhen AUROC 0.78, Montgomery 0.67; see `data/README.md`), so never present the JU-TB number alone.
 - Treat the rates in `generate_patients.py` as placeholders (`TODO: cite`) until they are replaced with India TB Report figures. Dropout labels come from our own rule, so model accuracy on synthetic data only shows the pipeline works. Never report it as real-world performance.
 - Next.js here is 16.4 with React 19.3 (`cacheComponents` and `partialPrefetching` on). Read `apps/web/node_modules/next/dist/docs/` before writing Next.js code. Don't rely on memory.
+- Supabase security: only the back end touches data tables, with the server-only secret key (never in the front end or git). Row-level security is forced on every table and browser roles (anon, authenticated) have no grants except reading their own `profiles` row; `service_role` has no DELETE and `audit_log` is append-only. New tables need RLS and explicit `service_role` grants (this project grants nothing by default). Run the Supabase security advisor after schema changes.
+- Every router has a role check (`app/auth.py` `require`, wired in `main.py`): practitioners use the counter, ASHAs the ASHA portal, coordinators both. Successful POSTs by a signed-in user are written to `audit_log`.
 - Write comments in the existing style: plain language aimed at beginner teammates, explaining what the code does and why.
 
 ## Architecture
 
-`services/api/app/main.py` adds CORS for `settings.frontend_origin` and registers one router per file in `app/routers/`:
-- `screen.py` → `POST /screen` takes age, symptoms, vulnerable groups, a WAV cough and an X-ray, and returns the next step, scores and a heatmap. Models load from `MODEL_DIR/{xray,cough}/` as `model.onnx` plus `model.json` (`app/inference/registry.py`), made by `ml/export/export_cxr.py` and `export_cough.py`. Git ignores them, and a missing model just leaves its score empty.
-- `patients.py` → `/patients`, `/patients/{id}` and `/risk/weekly?limit=` (sorted highest risk first).
-- `actions.py` → `/actions?status=` and approve/reject.
+`services/api/app/main.py` adds CORS for `settings.frontend_origin`, limits upload size, and registers one router per file in `app/routers/`:
+- `screen.py` → `POST /screen` (the counter check): age, sex, district, symptoms, history, a WAV cough (and optionally an X-ray). Returns the next step, reasons, scores and `risk_score`/`risk_band`, and saves a `Screening` summary. Scoring lives in `app/inference/scoring.py` (`score_cough`, `score_xray`, `risk_of` rescales so each model's threshold is 0.5, `band_of`: low < 0.35 ≤ moderate < 0.5 ≤ high). Models load from `MODEL_DIR/{xray,cough}/` as `model.onnx` plus `model.json` (`app/inference/registry.py`), made by `ml/export/`. Git ignores them, and a missing model just leaves its score empty.
+- `counter.py` → `POST /abha/lookup` (simulated, 4 synthetic records, consent required), `/screenings`, and `POST /screenings/{id}/forward|dismiss` (once).
+- `cases.py` → `/cases`, `/van-slots`, `/overview` (patient-journey counts), and the case steps `contact → sputum → schedule → xray | van-reading → combine → naat → start-treatment` (plus `close`). `combine` takes the higher rescaled cough/X-ray score (a simple rule, not fusion) and re-runs `decide()`.
+- `patients.py` → `/districts`, `/patients`, `/risk/weekly?limit=&district=`, `POST /patients/{id}/doses` (once a day) and `/isoscreen` (drug-sensitive regimens only).
+- `actions.py` → `/actions?status=` and approve/reject (TBC² suggestions).
 
-`app/mock_data.py` stands in for every future data source. It builds 60 seeded patients (in place of Supabase Postgres, `DATABASE_URL`), uses `mock_risk()` (rule points ranked like SHAP reasons, in place of the XGBoost model in `ml/dropout`) and holds an `ACTIONS` dict (in place of the LangGraph agent). State lives in memory and resets when the server restarts. Tests use `TestClient(app)` and import `app.main` (pytest `pythonpath = ["."]`).
+`app/db.py` mirrors the stores to Supabase when configured: `load_or_seed()` at startup (empty tables get the seed), and routers call `db.save_*()` after each change. `app/auth.py` checks the Supabase access token (`/auth/v1/user`, cached 60 s) and reads the role from `profiles`; `/me` returns it. `app/mock_data.py` holds every store in memory (reset on restart unless Supabase is on): 60 seeded patients (about a third in the demo district), 3 drafted suggestions per district, a week of counter screenings, 11 cases at every step, van slots and the ABHA demo records. `mock_risk()` stands in for the XGBoost model in `ml/dropout` (rule points ranked like SHAP reasons). Tests use `TestClient(app)` and import `app.main` (pytest `pythonpath = ["."]`).
 
-`apps/web` uses the App Router with route groups: `app/(asha)/screen` (the ASHA PWA flow, `app/manifest.ts`) and `app/(district)/dashboard` (risk table plus approve/reject). Both are client components. The UI uses shadcn/ui (`base-nova` style on `@base-ui/react`) in `components/ui` and Tailwind v4 through the `@tailwindcss/turbopack` loader.
+`apps/web` uses the App Router: `/` (portal chooser), `/login`, `app/(counter)/counter` and `app/(asha)/asha` (each wrapped in `components/auth-gate.tsx`, which sends signed-out users to `/login`; `lib/supabase.ts` only signs in and adds the token in `lib/api.ts`); `/screen` and `/dashboard` redirect (`next.config.ts`). Pages are client components built from `components/` (`app-header`, `logo`, `journey-card`, `panel`, `pill`, `drawer`, `counter/*`, `asha/*`). Labels and Title Case live in `lib/labels.ts`. Theme: teal tokens in `app/globals.css`, dark mode via a `dark` class set before paint in `app/layout.tsx`, and the lab watermark in `public/watermark-*.svg`. The UI uses shadcn/ui (`base-nova` on `@base-ui/react`) and Tailwind v4 through `@tailwindcss/turbopack`. Under WSL the dev server sometimes misses CSS edits: stop it, `rm -rf apps/web/.next`, restart.
 
 ## Glossary
 
 | Term | Meaning → code |
 | --- | --- |
-| TBC² | The project name ("TB care coordinator") |
-| ASHA | Accredited Social Health Activist, a community health worker → `app/(asha)/screen` |
-| District team | Officials who review risk and approve actions → `app/(district)/dashboard` |
+| TBC² | The project name ("TB Care Coordinator"); logo in `components/logo.tsx` |
+| Counter | A pharmacy or local practitioner who screens and forwards → `app/(counter)/counter` |
+| ASHA | Accredited Social Health Activist, a community health worker → `app/(asha)/asha` |
 | Ni-kshay | India's national TB patient system. We never connect to it |
-| Ni-kshay Poshan Yojana | Government nutrition support for TB patients → `gets_nutrition_support`, `nutrition_support` action |
+| Ni-kshay Poshan Yojana | Government nutrition support, ₹1,000/month during treatment → `gets_nutrition_support` |
+| ABHA | Ayushman Bharat Health Account, a 14-digit health ID. Simulated lookup only → `/abha/lookup` |
+| IsoScreen | Urine strip test for isoniazid, a spot check on self-reported doses → `isoscreen_tests` |
+| NAAT | Molecular sputum test (Truenat / CBNAAT) that confirms TB and rifampicin resistance (RR) → `NaatResult` |
+| Mobile X-ray van | Weekly van visits with X-ray → `/van-slots` |
 | CXR | Chest X-ray → `xray_score`, `ml/cxr` |
 | Grad-CAM | Heatmap of where the X-ray model looked (planned) |
 | Dropout / loss to follow-up | A patient stopping treatment → `/risk/weekly`, `ml/dropout` |
