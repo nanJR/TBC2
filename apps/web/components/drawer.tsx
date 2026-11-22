@@ -31,8 +31,8 @@ export function Drawer(props: {
         aria-modal="true"
         className="bg-card relative flex h-full w-full max-w-xl flex-col overflow-y-auto border-l shadow-2xl"
       >
-        <div className="bg-card/95 sticky top-0 z-10 flex items-start justify-between gap-4 border-b px-6 py-4 backdrop-blur">
-          <div>
+        <div className="bg-card/95 sticky top-0 z-10 flex items-start justify-between gap-4 border-b px-4 py-4 backdrop-blur sm:px-6">
+          <div className="min-w-0">
             <div className="text-lg font-semibold">{props.title}</div>
             {props.subtitle && (
               <div className="text-muted-foreground text-sm">{props.subtitle}</div>
@@ -42,12 +42,12 @@ export function Drawer(props: {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="hover:bg-secondary grid size-9 place-items-center rounded-full"
+            className="hover:bg-secondary grid size-9 shrink-0 place-items-center rounded-full"
           >
             <X className="size-4" />
           </button>
         </div>
-        <div className="flex flex-col gap-6 px-6 py-5">{props.children}</div>
+        <div className="flex flex-col gap-6 px-4 py-5 sm:px-6">{props.children}</div>
       </aside>
     </div>
   );

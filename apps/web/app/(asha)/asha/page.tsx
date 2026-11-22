@@ -124,7 +124,7 @@ function SuggestionCard(props: { a: Action; onOpen: () => void; onDecide: (d: "a
   const { a } = props;
   return (
     <div className="border-primary/25 bg-accent flex flex-col gap-2 rounded-xl border p-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <span className="text-primary text-xs font-semibold">
           {ACTION_TYPE[a.type]} · Suggested by TBC²
         </span>

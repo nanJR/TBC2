@@ -5,7 +5,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogIn } from "lucide-react";
+import { ArrowLeft, LogIn } from "lucide-react";
 
 import { AppFooter } from "@/components/app-footer";
 import { HOME_FOR_ROLE } from "@/components/auth-gate";
@@ -46,6 +46,14 @@ export default function LoginPage() {
 
   return (
     <>
+      {/* Back to the home page, styled like the round buttons in the header. */}
+      <Link
+        href="/"
+        className="bg-card hover:bg-secondary text-muted-foreground hover:text-foreground absolute top-4 left-4 inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        Back
+      </Link>
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>

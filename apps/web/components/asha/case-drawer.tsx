@@ -80,7 +80,7 @@ function Step(props: {
 function RiskBlock({ label, risk, band }: { label: string; risk: number | null; band: Case["combined_band"] }) {
   if (risk === null) return null;
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <span className="text-2xl font-semibold tabular-nums">{percent(risk)}</span>
       <span className="text-muted-foreground text-sm">{label}</span>
       {band && (
@@ -134,7 +134,7 @@ export function CaseDrawer(props: {
     <Drawer
       onClose={props.onClose}
       title={
-        <span className="flex items-center gap-3">
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
           Case {c.case_id}
           <Pill tone={finished ? "neutral" : "ok"}>{CASE_STATUS[c.status]}</Pill>
         </span>
@@ -212,7 +212,7 @@ export function CaseDrawer(props: {
           }
         >
           <Button disabled={busy} onClick={() => run(recordSputum(c.case_id))}>
-            Sputum Collected and Sent to TB Unit
+            Sputum Sent to TB Unit
           </Button>
         </Step>
 
@@ -373,7 +373,7 @@ export function CaseDrawer(props: {
           <p className="text-muted-foreground text-xs">
             Record this once the PHC Medical Officer has started treatment.
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <input value={mo} onChange={(e) => setMo(e.target.value)} placeholder="Medical Officer" className={field} />
             <input value={phc} onChange={(e) => setPhc(e.target.value)} placeholder="PHC" className={field} />
             <select

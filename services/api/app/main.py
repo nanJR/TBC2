@@ -59,7 +59,8 @@ async def limit_screen_upload_size(request: Request, call_next):
 # Let the Next.js front end call this API from the browser.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    # One address, or several separated by commas (e.g. localhost and the Vercel site).
+    allow_origins=[o.strip() for o in settings.frontend_origin.split(",") if o.strip()],
     allow_methods=["*"],
     allow_headers=["*"],
 )

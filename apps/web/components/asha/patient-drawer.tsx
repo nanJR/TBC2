@@ -91,7 +91,7 @@ export function PatientDrawer(props: {
     <Drawer
       onClose={props.onClose}
       title={
-        <span className="flex items-center gap-3">
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {p.patient_id}
           <Pill tone={riskTone} dot>
             {Math.round(entry.risk_score * 100)}% Dropout Risk

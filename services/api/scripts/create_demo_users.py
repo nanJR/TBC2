@@ -1,7 +1,7 @@
-"""Create (or reset) the two demo accounts in Supabase Auth and give them roles.
+"""Create (or reset) the three demo accounts in Supabase Auth and give them roles.
 
 Run from services/api after filling in .env (SUPABASE_URL, SUPABASE_SECRET_KEY,
-DEMO_PASSWORD_PRACTITIONER, DEMO_PASSWORD_ASHA):
+DEMO_PASSWORD_PRACTITIONER, DEMO_PASSWORD_ASHA, DEMO_PASSWORD_COORDINATOR):
 
     uv run python scripts/create_demo_users.py
 
@@ -26,6 +26,17 @@ ACCOUNTS = [
             "full_name": "Pharmacist",
             "district": "Chamarajanagar",
             "place": "Hanur",
+        },
+    },
+    {
+        # The admin login: a coordinator can use both portals.
+        "email": "coordinator.tbc2@example.com",
+        "password_env": "DEMO_PASSWORD_COORDINATOR",
+        "profile": {
+            "role": "coordinator",
+            "full_name": "District TB Coordinator",
+            "district": "Chamarajanagar",
+            "place": "District TB Centre",
         },
     },
     {

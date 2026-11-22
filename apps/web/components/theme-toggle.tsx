@@ -22,7 +22,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label="Switch Between Light and Dark Mode"
       title="Light / Dark Mode"
-      className="hover:bg-secondary text-muted-foreground hover:text-foreground grid size-9 place-items-center rounded-full border transition-colors"
+      className="hover:bg-secondary text-muted-foreground hover:text-foreground grid size-8 shrink-0 place-items-center rounded-full border transition-colors sm:size-9"
     >
       <Moon className="size-4 dark:hidden" aria-hidden />
       <Sun className="hidden size-4 dark:block" aria-hidden />
