@@ -78,6 +78,9 @@ app.include_router(patients.router, dependencies=asha_only)
 app.include_router(actions.router, dependencies=asha_only)
 
 
+# "/status" is the same check under a plainer name: some ad-blocker lists block URLs
+# with "health" in them, so the website uses /status.
+@app.get("/status", tags=["system"])
 @app.get("/health", tags=["system"])
 def health() -> dict[str, str]:
     """Quick check that the server is up. The front end calls this."""

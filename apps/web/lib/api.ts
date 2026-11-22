@@ -9,8 +9,11 @@ import { accessToken } from "@/lib/supabase";
 
 // NEXT_PUBLIC_ variables are readable in the browser. Set it in .env.local
 // (copy .env.example). Falls back to the local FastAPI server.
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_ADDRESS = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+// A hosted (https) API is reached through the website's own /api/... path, which
+// next.config.ts forwards to it, so ad blockers don't block it as a third-party request.
+export const API_URL = API_ADDRESS.startsWith("https://") ? "/api" : API_ADDRESS;
 
 // ---- Shared words (app/inference/referral.py and scoring.py) ----
 
@@ -310,7 +313,8 @@ const postJson = <T>(path: string, body?: unknown) =>
 export async function checkHealth(): Promise<boolean> {
   try {
     // Give up on one try after 10 s; the caller tries again while the API wakes up.
-    const res = await fetch(`${API_URL}/health`, {
+    // "/status" rather than "/health": some blocker lists block URLs containing "health".
+    const res = await fetch(`${API_URL}/status`, {
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });
