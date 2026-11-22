@@ -309,7 +309,11 @@ const postJson = <T>(path: string, body?: unknown) =>
 /** Returns true if the back end answers /health with status "ok". */
 export async function checkHealth(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/health`, { cache: "no-store" });
+    // Give up on one try after 10 s; the caller tries again while the API wakes up.
+    const res = await fetch(`${API_URL}/health`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
     if (!res.ok) return false;
     const body: { status: string } = await res.json();
     return body.status === "ok";

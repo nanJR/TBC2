@@ -6,14 +6,40 @@ import { useEffect, useState } from "react";
 
 import { checkHealth } from "@/lib/api";
 
-type Status = "checking" | "up" | "down";
+type Status = "checking" | "waking" | "up" | "down";
+
+// The hosted API (Render free plan) sleeps when idle and takes up to about a minute to
+// wake. So if the first check fails, keep asking every few seconds before giving up.
+const RETRY_EVERY_MS = 5_000;
+const GIVE_UP_AFTER_MS = 120_000;
 
 export function BackendStatus() {
   const [status, setStatus] = useState<Status>("checking");
 
-  // Runs once when the component first appears on screen.
+  // Runs once when the component first appears on screen. These checks also wake the API.
   useEffect(() => {
-    checkHealth().then((ok) => setStatus(ok ? "up" : "down"));
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const started = Date.now();
+
+    async function check() {
+      const ok = await checkHealth();
+      if (stopped) return;
+      if (ok) {
+        setStatus("up");
+      } else if (Date.now() - started < GIVE_UP_AFTER_MS) {
+        setStatus("waking");
+        timer = setTimeout(check, RETRY_EVERY_MS);
+      } else {
+        setStatus("down");
+      }
+    }
+
+    check();
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   return (
@@ -25,11 +51,18 @@ export function BackendStatus() {
       <span
         aria-hidden
         className={`size-2 rounded-full ${
-          status === "up" ? "bg-ok" : status === "down" ? "bg-alert" : "bg-muted-foreground"
+          status === "up"
+            ? "bg-ok"
+            : status === "down"
+              ? "bg-alert"
+              : status === "waking"
+                ? "bg-wait animate-pulse"
+                : "bg-muted-foreground"
         }`}
       />
       Back End:{" "}
       {status === "checking" && "Checking…"}
+      {status === "waking" && <span className="text-wait font-medium">Waking Up…</span>}
       {status === "up" && <span className="text-ok font-medium">Running</span>}
       {status === "down" && <span className="text-alert font-medium">Not Reachable</span>}
     </span>
