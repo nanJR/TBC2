@@ -60,7 +60,8 @@ async def limit_screen_upload_size(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     # One address, or several separated by commas (e.g. localhost and the Vercel site).
-    allow_origins=[o.strip() for o in settings.frontend_origin.split(",") if o.strip()],
+    # A trailing "/" is ignored: browsers send the origin without one.
+    allow_origins=[o.strip().rstrip("/") for o in settings.frontend_origin.split(",") if o.strip()],
     allow_methods=["*"],
     allow_headers=["*"],
 )
